@@ -30,5 +30,7 @@
       "name": "Manager",
       "hidden": ["card5"]
     }
-  ]
+  ],
+  "themeColor": "#e8f0fe",
+  "accentColor": "#007bff"
 }

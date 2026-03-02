@@ -9,6 +9,15 @@
         :root {
             /* footer background can be customized by overriding this variable */
             --footer-bg-color: #f8f9fa;
+            /* theming colour loaded from config.json */
+            --theme-bg: #ffffff;
+            --navbar-bg: #ffffff;
+            /* accent color for outlines, links, buttons */
+            --accent-color: #007bff;
+        }
+
+        .navbar {
+            background-color: var(--navbar-bg) !important;
         }
 
         .card.draggable {
@@ -28,7 +37,7 @@
 
         /* highlight potential drop targets on cards */
         .card.drop-target {
-            outline: 2px dashed #007bff;
+            outline: 2px dashed var(--accent-color);
             transform: scale(1.03);
             transition: transform 0.1s ease-in-out;
             box-shadow: 0 12px 24px rgba(0,0,0,0.35);
@@ -95,6 +104,14 @@
         /* ensure content doesn't sit behind the fixed footer */
         body {
             padding-bottom: 4rem; /* slightly larger than footer height */
+            background-color: var(--theme-bg);
+        }
+
+        #main-container {
+            background: #fff;
+            border-radius: 0.5rem;
+            padding: 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
         /* styles for export link in footer */
@@ -131,7 +148,7 @@
         </div>
     </nav>
 
-    <div class="container py-5">
+    <div class="container py-5" id="main-container">
         <h1 class="mb-4 d-flex align-items-center">
             <span>My Dashboard</span>
             <button id="edit-toggle" class="btn btn-sm btn-outline-secondary ms-3">Edit</button>
@@ -185,6 +202,35 @@
 
         // configuration helpers; defaultCards acts as a fallback if config.json cannot be loaded
         const defaultCards = [];
+
+        // load configuration and apply theme/branding/cards
+        fetch('config.json').then(r=>r.json()).then(cfg=>{
+            if (cfg.themeColor) {
+                document.documentElement.style.setProperty('--theme-bg', cfg.themeColor);
+                document.documentElement.style.setProperty('--navbar-bg', cfg.themeColor);
+            }
+            if (cfg.accentColor) {
+                document.documentElement.style.setProperty('--accent-color', cfg.accentColor);
+            }
+            if (cfg.branding) {
+                const brand = document.getElementById('navbar-brand');
+                if (brand) {
+                    brand.textContent = cfg.branding.siteName || brand.textContent;
+                    if (cfg.branding.navbarHref) brand.href = cfg.branding.navbarHref;
+                }
+                const title = document.querySelector('.container h1 span');
+                if (title && cfg.branding.siteName) title.textContent = `${cfg.branding.siteName} Dashboard`;
+                const footer = document.querySelector('.custom-footer');
+                if (footer) {
+                    footer.innerHTML = `&copy; 2026 ${cfg.branding.footerText || ''}. <a href="${cfg.branding.footerLinkUrl||'#'}" class="text-reset">${cfg.branding.footerLinkText||'Learn more'}</a>`;
+                }
+            }
+            if (cfg.cards && Array.isArray(cfg.cards)) {
+                // update list variable and re-render if already created
+                defaultCards.splice(0, defaultCards.length, ...cfg.cards);
+            }
+        }).catch(console.warn);
+
 
         // editing state and storage
         let editMode = false;
