@@ -27,7 +27,7 @@ Users can rearrange cards representing application sections, save the order to `
 3. Drag cards around to change their order. The new order will be saved automatically.
 4. Use the buttons in the footer to export, upload, or reset the card order.
 
-#### Customization
+### Customization
 
 - Edit the `defaultCards` array in `index.html` to change titles, images, target URLs, and descriptions.
 - Override the `--footer-bg-color` variable in `:root` to match your branding.
