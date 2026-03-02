@@ -1,0 +1,24 @@
+{
+  "branding": {
+    "siteName": "BrandName",
+    "navbarHref": "#",
+    "footerText": "Your Company",
+    "footerLinkText": "Learn more",
+    "footerLinkUrl": "#"
+  },
+  "cards": [
+    { "id": "card1", "title": "Dashboard", "desc": "Go to dashboard", "url": "#dashboard", "img": "https://placehold.net/400x400.png?text=Dashboard" },
+    { "id": "card2", "title": "Profile", "desc": "View your profile", "url": "#profile", "img": "https://placehold.net/400x400.png?text=Profile" },
+    { "id": "card3", "title": "Settings", "desc": "Application settings", "url": "#settings", "img": "https://placehold.net/400x400.png?text=Settings" },
+    { "id": "card4", "title": "Reports", "desc": "View reports", "url": "#reports", "img": "https://placehold.net/400x400.png?text=Reports" },
+    { "id": "card5", "title": "Analytics", "desc": "See analytics", "url": "#analytics", "img": "https://placehold.net/400x400.png?text=Analytics" },
+    { "id": "card6", "title": "Messages", "desc": "Check messages", "url": "#messages", "img": "https://placehold.net/400x400.png?text=Messages" },
+    { "id": "card7", "title": "Notifications", "desc": "View notifications", "url": "#notifications", "img": "https://placehold.net/400x400.png?text=Notifications" },
+    { "id": "card8", "title": "Help", "desc": "Get help", "url": "#help", "img": "https://placehold.net/400x400.png?text=Help" },
+    { "id": "card9", "title": "Support", "desc": "Contact support", "url": "#support", "img": "https://placehold.net/400x400.png?text=Support" },
+    { "id": "card10", "title": "Feedback", "desc": "Leave feedback", "url": "#feedback", "img": "https://placehold.net/400x400.png?text=Feedback" },
+    { "id": "card11", "title": "Blog", "desc": "Read our blog", "url": "#blog", "img": "https://placehold.net/400x400.png?text=Blog" },
+    { "id": "card12", "title": "Store", "desc": "Visit our store", "url": "#store", "img": "https://placehold.net/400x400.png?text=Store" },
+    { "id": "card13", "title": "Events", "desc": "Upcoming events", "url": "#events", "img": "https://placehold.net/400x400.png?text=Events" }
+  ]
+}

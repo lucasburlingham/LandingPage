@@ -102,14 +102,13 @@
     <!-- navigation bar with branding opportunity -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container-fluid">
-            <a class="navbar-brand" href="#">BrandName</a>
+            <a id="navbar-brand" class="navbar-brand" href="#">BrandName</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="#">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#">About</a></li>
+                    <!-- <li class="nav-item"><a class="nav-link" href="#">Home</a></li> -->
                     <!-- add more links as needed -->
                 </ul>
             </div>
@@ -127,7 +126,7 @@
 
     <!-- simple footer at the bottom; change --footer-bg-color in :root to customize -->
     <footer class="custom-footer text-muted">
-        &copy; 2026 Your Company. <a href="#" class="text-reset">Learn more</a>
+        &copy; <span id="footer-year"></span> <span id="footer-company"></span>. <a href="#" id="footer-link" class="text-reset">Learn more</a>
         <!-- export order link centered in footer -->
         <br>
         <a href="#" id="export-link" class="export-link">Export order</a>
@@ -163,22 +162,20 @@
             }
         }
 
-        // sample default cards with image URLs
-        const defaultCards = [
-            {id: 'card1', title: 'Dashboard', desc: 'Go to dashboard', url: '#dashboard', img: 'https://placehold.net/400x400.png?text=Dashboard'},
-            {id: 'card2', title: 'Profile', desc: 'View your profile', url: '#profile', img: 'https://placehold.net/400x400.png?text=Profile'},
-            {id: 'card3', title: 'Settings', desc: 'Application settings', url: '#settings', img: 'https://placehold.net/400x400.png?text=Settings'},
-            {id: 'card4', title: 'Reports', desc: 'View reports', url: '#reports', img: 'https://placehold.net/400x400.png?text=Reports'},
-            {id: 'card5', title: 'Analytics', desc: 'See analytics', url: '#analytics', img: 'https://placehold.net/400x400.png?text=Analytics'},
-            {id: 'card6', title: 'Messages', desc: 'Check messages', url: '#messages', img: 'https://placehold.net/400x400.png?text=Messages'},
-            {id: 'card7', title: 'Notifications', desc: 'View notifications', url: '#notifications', img: 'https://placehold.net/400x400.png?text=Notifications'},
-            {id: 'card8', title: 'Help', desc: 'Get help', url: '#help', img: 'https://placehold.net/400x400.png?text=Help'},
-            {id: 'card9', title: 'Support', desc: 'Contact support', url: '#support', img: 'https://placehold.net/400x400.png?text=Support'},
-            {id: 'card10', title: 'Feedback', desc: 'Leave feedback', url: '#feedback', img: 'https://placehold.net/400x400.png?text=Feedback'},
-            {id: 'card11', title: 'Blog', desc: 'Read our blog', url: '#blog', img: 'https://placehold.net/400x400.png?text=Blog'},
-            {id: 'card12', title: 'Store', desc: 'Visit our store', url: '#store', img: 'https://placehold.net/400x400.png?text=Store'},
-            {id: 'card13', title: 'Events', desc: 'Upcoming events', url: '#events', img: 'https://placehold.net/400x400.png?text=Events'}
-        ];
+        // configuration helpers; defaultCards acts as a fallback if config.json cannot be loaded
+        const defaultCards = [];
+
+        function loadConfig() {
+            return fetch('config.json')
+                .then(r => {
+                    if (!r.ok) throw new Error('network response not ok');
+                    return r.json();
+                })
+                .catch(err => {
+                    console.error('failed to load config:', err);
+                    return {};
+                });
+        }
 
         const container = document.getElementById('cards-container');
 
@@ -318,72 +315,97 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            const order = loadOrder();
-            let list = defaultCards.slice();
-            if (order) {
-                // reorder list according to saved order
-                const map = new Map(list.map(i => [i.id, i]));
-                const ordered = [];
-                order.forEach(id => {
-                    if (map.has(id)) ordered.push(map.get(id));
-                });
-                // append any that were not in storage
-                list.forEach(i => { if (!order.includes(i.id)) ordered.push(i); });
-                list = ordered;
-            }
-            renderCards(list);
+            loadConfig().then(cfg => {
+                // apply branding from config
+                const branding = cfg.branding || {};
+                const siteName = branding.siteName || 'BrandName';
+                const navbarHref = branding.navbarHref || '#';
+                const footerText = branding.footerText || 'Your Company';
+                const footerLinkText = branding.footerLinkText || 'Learn more';
+                const footerLinkUrl = branding.footerLinkUrl || '#';
 
-            // hook up export link
-            const exp = document.getElementById('export-link');
-            if (exp) {
-                exp.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    exportOrder();
-                });
-            }
+                const navBrandEl = document.getElementById('navbar-brand');
+                if (navBrandEl) {
+                    navBrandEl.textContent = siteName;
+                    navBrandEl.href = navbarHref;
+                }
 
-            // upload support
-            const uploadBtn = document.getElementById('upload-btn');
-            const uploadInput = document.getElementById('upload-input');
-            if (uploadBtn && uploadInput) {
-                uploadBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    uploadInput.click();
-                });
-                uploadInput.addEventListener('change', function() {
-                    const file = this.files && this.files[0];
-                    if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = function(evt) {
-                        try {
-                            const text = evt.target.result;
-                            const parsed = JSON.parse(text);
-                            if (Array.isArray(parsed)) {
-                                localStorage.setItem('cardOrder', JSON.stringify(parsed));
-                                // reload to apply new order
-                                window.location.reload();
-                            } else {
-                                alert('Invalid format; expected an array');
+                const footerYearEl = document.getElementById('footer-year');
+                const footerCompanyEl = document.getElementById('footer-company');
+                const footerLinkEl = document.getElementById('footer-link');
+                if (footerYearEl) footerYearEl.textContent = new Date().getFullYear();
+                if (footerCompanyEl) footerCompanyEl.textContent = footerText;
+                if (footerLinkEl) {
+                    footerLinkEl.textContent = footerLinkText;
+                    footerLinkEl.href = footerLinkUrl;
+                }
+
+                // cards list uses config or fallback
+                const order = loadOrder();
+                let list = Array.isArray(cfg.cards) ? cfg.cards.slice() : defaultCards.slice();
+                if (order) {
+                    const map = new Map(list.map(i => [i.id, i]));
+                    const ordered = [];
+                    order.forEach(id => {
+                        if (map.has(id)) ordered.push(map.get(id));
+                    });
+                    list.forEach(i => { if (!order.includes(i.id)) ordered.push(i); });
+                    list = ordered;
+                }
+                renderCards(list);
+
+                // hook up export link
+                const exp = document.getElementById('export-link');
+                if (exp) {
+                    exp.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        exportOrder();
+                    });
+                }
+
+                // upload support
+                const uploadBtn = document.getElementById('upload-btn');
+                const uploadInput = document.getElementById('upload-input');
+                if (uploadBtn && uploadInput) {
+                    uploadBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        uploadInput.click();
+                    });
+                    uploadInput.addEventListener('change', function() {
+                        const file = this.files && this.files[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = function(evt) {
+                            try {
+                                const text = evt.target.result;
+                                const parsed = JSON.parse(text);
+                                if (Array.isArray(parsed)) {
+                                    localStorage.setItem('cardOrder', JSON.stringify(parsed));
+                                    // reload to apply new order
+                                    window.location.reload();
+                                } else {
+                                    alert('Invalid format; expected an array');
+                                }
+                            } catch (err) {
+                                alert('Failed to parse JSON: ' + err.message);
                             }
-                        } catch (err) {
-                            alert('Failed to parse JSON: ' + err.message);
-                        }
-                    };
-                    reader.readAsText(file);
-                });
-            }
+                        };
+                        reader.readAsText(file);
+                    });
+                }
 
-            // reset support
-            const resetBtn = document.getElementById('reset-btn');
-            if (resetBtn) {
-                resetBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    if (confirm('Are you sure you want to reset order?')) {
-                        localStorage.removeItem('cardOrder');
-                        window.location.reload();
-                    }
-                });
-            }
+                // reset support
+                const resetBtn = document.getElementById('reset-btn');
+                if (resetBtn) {
+                    resetBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        if (confirm('Are you sure you want to reset order?')) {
+                            localStorage.removeItem('cardOrder');
+                            window.location.reload();
+                        }
+                    });
+                }
+            });
         });
     </script>
 </body>
