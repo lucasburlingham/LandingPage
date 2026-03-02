@@ -200,36 +200,46 @@
             }
         }
 
-        // configuration helpers; defaultCards acts as a fallback if config.json cannot be loaded
-        const defaultCards = [];
+// configuration helpers; defaultCards acts as a fallback if config.json (or example) cannot be loaded
+const defaultCards = [];
 
-        // load configuration and apply theme/branding/cards
-        fetch('config.json').then(r=>r.json()).then(cfg=>{
-            if (cfg.themeColor) {
-                document.documentElement.style.setProperty('--theme-bg', cfg.themeColor);
-                document.documentElement.style.setProperty('--navbar-bg', cfg.themeColor);
+// helper to attempt loading a requested file, falling back to example
+function fetchConfig(path) {
+    return fetch(path).then(r => {
+        if (!r.ok) throw new Error(`${path} not available`);
+        return r.json();
+    });
+}
+
+// load configuration and apply theme/branding/cards
+fetchConfig('config.json')
+    .catch(() => fetchConfig('config.json.example'))
+    .then(cfg => {
+        if (cfg.themeColor) {
+            document.documentElement.style.setProperty('--theme-bg', cfg.themeColor);
+            document.documentElement.style.setProperty('--navbar-bg', cfg.themeColor);
+        }
+        if (cfg.accentColor) {
+            document.documentElement.style.setProperty('--accent-color', cfg.accentColor);
+        }
+        if (cfg.branding) {
+            const brand = document.getElementById('navbar-brand');
+            if (brand) {
+                brand.textContent = cfg.branding.siteName || brand.textContent;
+                if (cfg.branding.navbarHref) brand.href = cfg.branding.navbarHref;
             }
-            if (cfg.accentColor) {
-                document.documentElement.style.setProperty('--accent-color', cfg.accentColor);
+            const title = document.querySelector('.container h1 span');
+            if (title && cfg.branding.siteName) title.textContent = `${cfg.branding.siteName} Dashboard`;
+            const footer = document.querySelector('.custom-footer');
+            if (footer) {
+                footer.innerHTML = `&copy; 2026 ${cfg.branding.footerText || ''}. <a href="${cfg.branding.footerLinkUrl||'#'}" class="text-reset">${cfg.branding.footerLinkText||'Learn more'}</a>`;
             }
-            if (cfg.branding) {
-                const brand = document.getElementById('navbar-brand');
-                if (brand) {
-                    brand.textContent = cfg.branding.siteName || brand.textContent;
-                    if (cfg.branding.navbarHref) brand.href = cfg.branding.navbarHref;
-                }
-                const title = document.querySelector('.container h1 span');
-                if (title && cfg.branding.siteName) title.textContent = `${cfg.branding.siteName} Dashboard`;
-                const footer = document.querySelector('.custom-footer');
-                if (footer) {
-                    footer.innerHTML = `&copy; 2026 ${cfg.branding.footerText || ''}. <a href="${cfg.branding.footerLinkUrl||'#'}" class="text-reset">${cfg.branding.footerLinkText||'Learn more'}</a>`;
-                }
-            }
-            if (cfg.cards && Array.isArray(cfg.cards)) {
-                // update list variable and re-render if already created
-                defaultCards.splice(0, defaultCards.length, ...cfg.cards);
-            }
-        }).catch(console.warn);
+        }
+        if (cfg.cards && Array.isArray(cfg.cards)) {
+            // update list variable and re-render if already created
+            defaultCards.splice(0, defaultCards.length, ...cfg.cards);
+        }
+    }).catch(console.warn);
 
 
         // editing state and storage
@@ -286,13 +296,21 @@
         }
 
         function loadConfig() {
+            // try primary config first, then example fallback
             return fetch('config.json')
                 .then(r => {
-                    if (!r.ok) throw new Error('network response not ok');
+                    if (!r.ok) throw new Error('primary config not ok');
                     return r.json();
                 })
+                .catch(() => {
+                    return fetch('config.json.example')
+                        .then(r => {
+                            if (!r.ok) throw new Error('fallback config not ok');
+                            return r.json();
+                        });
+                })
                 .catch(err => {
-                    console.error('failed to load config:', err);
+                    console.error('failed to load any config:', err);
                     return {};
                 });
         }
