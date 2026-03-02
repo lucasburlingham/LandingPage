@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration - Configure Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { padding-bottom: 4rem; }
+        .dept-row { margin-bottom: .5rem; }
+        .dept-row input { margin-right: .5rem; }
+        .dept-row textarea { vertical-align: top; }
+        /* preview card helpers borrowed from index.css */
+        .card-img-container {
+            width: 100%;
+            max-width: 300px;
+            height: 150px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .card-img-top {
+            display: block;
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <h1 class="mb-4">Dashboard Configuration</h1>
+        <div class="row">
+            <div class="col-md-6">
+                <form id="config-form">
+                    <h2>Branding</h2>
+                    <div class="mb-3">
+                        <label class="form-label">Site name</label>
+                        <input type="text" id="siteName" class="form-control" placeholder="Site name" data-bs-toggle="tooltip" title="Displayed in header and title">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Navbar href</label>
+                        <input type="text" id="navbarHref" class="form-control" placeholder="Navbar link" data-bs-toggle="tooltip" title="URL for site branding link">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Footer text</label>
+                        <input type="text" id="footerText" class="form-control" placeholder="Footer text" data-bs-toggle="tooltip" title="Text shown in footer before the link">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Footer link text</label>
+                        <input type="text" id="footerLinkText" class="form-control" placeholder="Footer link text" data-bs-toggle="tooltip" title="Clickable text shown in footer">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Footer link URL</label>
+                        <input type="text" id="footerLinkUrl" class="form-control" placeholder="Footer link URL" data-bs-toggle="tooltip" title="Destination URL for footer link">
+                    </div>
+
+                    <h2>Theme</h2>
+                    <div class="mb-3">
+                        <label class="form-label">Background color</label>
+                        <input type="color" id="themeColor" class="form-control form-control-color" value="#ffffff" data-bs-toggle="tooltip" title="Dashboard background color">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Accent color</label>
+                        <input type="color" id="accentColor" class="form-control form-control-color" value="#007bff" data-bs-toggle="tooltip" title="Accent color for links/buttons">
+                    </div>
+
+                    <h2>Add card</h2>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6"><input type="text" id="cardId" class="form-control form-control-sm" placeholder="ID" data-bs-toggle="tooltip" hidden><!-- Leave blank to autogenerate --></div>
+                        <div class="col-12"><input type="text" id="cardTitle" class="form-control form-control-sm" placeholder="Title" data-bs-toggle="tooltip" title="Visible card title"></div>
+                        <div class="col-6"><input type="text" id="cardDesc" class="form-control form-control-sm" placeholder="Description" data-bs-toggle="tooltip" title="Short description under title"></div>
+                        <div class="col-6"><input type="text" id="cardUrl" class="form-control form-control-sm" placeholder="URL" data-bs-toggle="tooltip" title="Destination when card clicked"></div>
+                        <div class="col-12"><input type="text" id="cardImg" class="form-control form-control-sm" placeholder="Image URL" data-bs-toggle="tooltip" title="Optional icon/image URL"></div>
+                    </div>
+                    <button type="button" id="add-card-btn" class="btn btn-sm btn-outline-secondary mb-3">Add to list</button>
+
+                    <h2>Cards (raw JSON)</h2>
+                    <div class="mb-3">
+                        <textarea id="cardsJson" class="form-control" rows="8"></textarea>
+                    </div>
+
+                    <h2>Departments</h2>
+                    <div id="departments-container">
+                        <!-- rows injected here -->
+                    </div>
+                    <button type="button" id="add-department" class="btn btn-sm btn-outline-primary mb-3">Add department</button>
+
+                    <br>
+                    <button type="button" id="download-btn" class="btn btn-success">Download config.json</button>
+                    <a href="index.html" class="btn btn-secondary ms-2">Back to dashboard</a>
+                </form>
+            </div>
+            <div class="col-md-6" id="preview-area" style="min-height:400px; display:flex; align-items:flex-start; justify-content:center; padding-top:1rem;">
+                <div id="preview-bg" style="padding:1rem;">
+                    <!-- preview card will be inserted here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function fetchConfig(path) {
+            return fetch(path).then(r => {
+                if (!r.ok) throw new Error(`${path} not available`);
+                return r.json();
+            });
+        }
+
+        function makeDeptRow(dept) {
+            const div = document.createElement('div');
+            div.className = 'dept-row d-flex align-items-start';
+            const nameInp = document.createElement('input');
+            nameInp.type = 'text';
+            nameInp.placeholder = 'Name';
+            nameInp.className = 'form-control form-control-sm';
+            nameInp.value = dept.name || '';
+            nameInp.style.width = '200px';
+
+            const hiddenTxt = document.createElement('textarea');
+            hiddenTxt.className = 'form-control form-control-sm';
+            hiddenTxt.placeholder = 'Hidden ids (comma separated) – cards listed here will be removed for this department';
+            hiddenTxt.rows = 1;
+            hiddenTxt.style.width = '400px';
+            hiddenTxt.value = Array.isArray(dept.hidden) ? dept.hidden.join(',') : '';
+
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'btn btn-sm btn-danger ms-2';
+            remove.textContent = '×';
+            remove.addEventListener('click', () => div.remove());
+
+            div.appendChild(nameInp);
+            div.appendChild(hiddenTxt);
+            div.appendChild(remove);
+            return div;
+        }
+
+        function populateDepartments(arr) {
+            const container = document.getElementById('departments-container');
+            container.innerHTML = '';
+            arr.forEach(d => container.appendChild(makeDeptRow(d)));
+        }
+
+        function gatherDepartments() {
+            const rows = document.querySelectorAll('#departments-container .dept-row');
+            return Array.from(rows).map(r => ({
+                name: r.children[0].value.trim(),
+                hidden: r.children[1].value.split(',').map(s => s.trim()).filter(Boolean)
+            })).filter(d => d.name);
+        }
+
+        let cardCounter = 1; // will be bumped to avoid duplicates
+        function load() {
+            fetchConfig('config.json')
+                .catch(() => fetchConfig('config.json.example'))
+                .then(cfg => {
+                    const b = cfg.branding || {};
+                    document.getElementById('siteName').value = b.siteName || '';
+                    document.getElementById('navbarHref').value = b.navbarHref || '';
+                    document.getElementById('footerText').value = b.footerText || '';
+                    document.getElementById('footerLinkText').value = b.footerLinkText || '';
+                    document.getElementById('footerLinkUrl').value = b.footerLinkUrl || '';
+                    document.getElementById('themeColor').value = cfg.themeColor || '#ffffff';
+                    document.getElementById('accentColor').value = cfg.accentColor || '#007bff';
+                    const cards = cfg.cards || [];
+                    document.getElementById('cardsJson').value = JSON.stringify(cards, null, 2);
+                    // compute next counter from existing card ids
+                    cards.forEach(c=>{
+                        const match = /^card(\d+)$/i.exec(c.id);
+                        if(match) {
+                            const n = parseInt(match[1],10);
+                            if(n >= cardCounter) cardCounter = n+1;
+                        }
+                    });
+                    const depts = Array.isArray(cfg.departments) ? cfg.departments : (Array.isArray(cfg.roles) ? cfg.roles : []);
+                    populateDepartments(depts);
+                }).catch(console.error);
+        }
+
+        document.getElementById('add-department').addEventListener('click', () => {
+            const container = document.getElementById('departments-container');
+            container.appendChild(makeDeptRow({ name: '', hidden: [] }));
+        });
+
+        // card builder helpers
+        function appendCardToJson(card) {
+            let arr;
+            try {
+                arr = JSON.parse(document.getElementById('cardsJson').value) || [];
+            } catch (e) {
+                arr = [];
+            }
+            arr.push(card);
+            document.getElementById('cardsJson').value = JSON.stringify(arr, null, 2);
+        }
+
+        document.getElementById('add-card-btn').addEventListener('click', () => {
+            let idVal = document.getElementById('cardId').value.trim();
+            if (!idVal) {
+                idVal = `card${cardCounter++}`;
+                document.getElementById('cardId').value = idVal; // show generated id
+            }
+            const card = {
+                id: idVal,
+                title: document.getElementById('cardTitle').value.trim(),
+                desc: document.getElementById('cardDesc').value.trim(),
+                url: document.getElementById('cardUrl').value.trim(),
+                img: document.getElementById('cardImg').value.trim()
+            };
+            appendCardToJson(card);
+            // clear inputs except id for next increment
+            ['cardTitle','cardDesc','cardUrl','cardImg'].forEach(id=>document.getElementById(id).value='');
+            document.getElementById('cardId').value = '';
+            updatePreview();
+        });
+
+        function updatePreview() {
+            const bg = document.getElementById('preview-bg');
+            const theme = document.getElementById('themeColor').value;
+            const accent = document.getElementById('accentColor').value;
+            bg.style.background = theme;
+            // pick values from current builder if available, else defaults
+            const title = document.getElementById('cardTitle').value || 'Sample card';
+            const desc = document.getElementById('cardDesc').value || 'Description goes here.';
+            const img = document.getElementById('cardImg').value || '';
+            bg.innerHTML = '<div id="card-holder"></div>';
+            const card = document.createElement('div');
+            card.className = 'card p-3';
+            card.style.maxWidth = '18rem';
+            let inner = '';
+            if (img) {
+                inner += `<div class="card-img-container mb-2"><img src="${img}" class="card-img-top" alt="${title}"></div>`;
+            }
+            inner += `<h5 class="card-title" style="color:${accent};">${title}</h5><p class="card-text">${desc}</p>`;
+            card.innerHTML = inner;
+            area.appendChild(card);
+        }
+
+        ['themeColor','accentColor','cardTitle','cardDesc','cardImg'].forEach(id => {
+            document.getElementById(id).addEventListener('input', updatePreview);
+        });
+
+        // initial preview on load
+        document.addEventListener('DOMContentLoaded', function() {
+            load();
+            updatePreview();
+            // bootstrap tooltip activation
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.forEach(function (el) { new bootstrap.Tooltip(el); });
+        });
+
+        document.getElementById('download-btn').addEventListener('click', () => {
+            let cards;
+            try {
+                cards = JSON.parse(document.getElementById('cardsJson').value);
+            } catch (e) {
+                alert('Invalid JSON in cards field');
+                return;
+            }
+
+            const config = {
+                branding: {
+                    siteName: document.getElementById('siteName').value,
+                    navbarHref: document.getElementById('navbarHref').value,
+                    footerText: document.getElementById('footerText').value,
+                    footerLinkText: document.getElementById('footerLinkText').value,
+                    footerLinkUrl: document.getElementById('footerLinkUrl').value
+                },
+                cards: cards,
+                departments: gatherDepartments(),
+                themeColor: document.getElementById('themeColor').value,
+                accentColor: document.getElementById('accentColor').value
+            };
+
+            const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'config.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+    </script>
+</body>
+</html>

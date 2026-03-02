@@ -205,8 +205,10 @@
         <!-- export order link centered in footer -->
         <br>
         <a href="#" id="export-link" class="export-link">Export order</a>
+        <button id="download-config-btn" class="export-link" style="margin-left:1rem;">Download config</button>
         <button id="upload-btn" class="export-link" style="margin-left:1rem;">Upload order</button>
         <button id="reset-btn" class="export-link" style="margin-left:1rem;">Reset order</button>
+        <a href="admin.html" id="admin-link" class="export-link" style="margin-left:1rem;">Admin</a>
         <input type="file" id="upload-input" accept="application/json" style="display:none;">
     </footer>
 
@@ -681,6 +683,26 @@ fetchConfig('config.json')
                     exp.addEventListener('click', function(e) {
                         e.preventDefault();
                         exportOrder();
+                    });
+                }
+                // download full config file
+                const downloadCfgBtn = document.getElementById('download-config-btn');
+                if (downloadCfgBtn) {
+                    downloadCfgBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        fetchConfig('config.json')
+                            .catch(() => fetchConfig('config.json.example'))
+                            .then(cfg => {
+                                const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = 'config.json';
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                URL.revokeObjectURL(url);
+                            }).catch(console.error);
                     });
                 }
 
