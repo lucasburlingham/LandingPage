@@ -20,5 +20,15 @@
     { "id": "card11", "title": "Blog", "desc": "Read our blog", "url": "#blog", "img": "https://placehold.net/400x400.png?text=Blog" },
     { "id": "card12", "title": "Store", "desc": "Visit our store", "url": "#store", "img": "https://placehold.net/400x400.png?text=Store" },
     { "id": "card13", "title": "Events", "desc": "Upcoming events", "url": "#events", "img": "https://placehold.net/400x400.png?text=Events" }
+  ],
+  "roles": [
+    {
+      "name": "Employee",
+      "hidden": ["card4", "card6"]
+    },
+    {
+      "name": "Manager",
+      "hidden": ["card5"]
+    }
   ]
 }

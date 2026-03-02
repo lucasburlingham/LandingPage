@@ -56,6 +56,22 @@
             margin: 0 auto;
         }
 
+        /* when the dashboard is in edit mode a small hide/unhide control appears */
+        .card.edit-mode {
+            position: relative;
+        }
+        .card.edit-mode .edit-hide-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            z-index: 10;
+        }
+
+        /* style hidden cards while editing so you can identify them */
+        .hidden-card {
+            opacity: 0.4;
+        }
+
         /* ensure images on cards remain square and cover the area */
         .card-img-top {
             width: 100%;
@@ -116,7 +132,12 @@
     </nav>
 
     <div class="container py-5">
-        <h1 class="mb-4">My Dashboard</h1>
+        <h1 class="mb-4 d-flex align-items-center">
+            <span>My Dashboard</span>
+            <button id="edit-toggle" class="btn btn-sm btn-outline-secondary ms-3">Edit</button>
+            <select id="role-select" class="form-select form-select-sm ms-auto" style="width:auto;"> <!-- options populated by script -->
+            </select>
+        </h1>
         <div id="cards-container" class="row g-3">
             <!-- cards injected here -->
         </div>
@@ -165,6 +186,59 @@
         // configuration helpers; defaultCards acts as a fallback if config.json cannot be loaded
         const defaultCards = [];
 
+        // editing state and storage
+        let editMode = false;
+        let cardsList = [];
+
+        function loadHidden() {
+            const raw = localStorage.getItem('cardHidden');
+            if (raw) {
+                try { return new Set(JSON.parse(raw)); } catch(e) { }
+            }
+            return new Set();
+        }
+
+        function saveHidden() {
+            const ids = cardsList.filter(i => i.hidden).map(i => i.id);
+            localStorage.setItem('cardHidden', JSON.stringify(ids));
+        }
+
+        // role helpers stored separately so we can persist list and selection
+        function loadRoles() {
+            const raw = localStorage.getItem('roles');
+            if (raw) {
+                try { return JSON.parse(raw); } catch(e) {}
+            }
+            return [];
+        }
+        function saveRoles(arr) {
+            localStorage.setItem('roles', JSON.stringify(arr));
+        }
+
+        function applyRoleHidden(list) {
+            const roleName = localStorage.getItem('userRole');
+            if (!roleName) return;
+            const roles = loadRoles();
+            const match = roles.find(r => r.name === roleName);
+            if (match && Array.isArray(match.hidden)) {
+                match.hidden.forEach(id => {
+                    const item = list.find(i => i.id === id);
+                    if (item) item.hidden = true;
+                });
+            }
+        }
+
+        function toggleEditMode() {
+            editMode = !editMode;
+            updateEditButton();
+            renderCards(cardsList);
+        }
+
+        function updateEditButton() {
+            const btn = document.getElementById('edit-toggle');
+            if (btn) btn.textContent = editMode ? 'Done' : 'Edit';
+        }
+
         function loadConfig() {
             return fetch('config.json')
                 .then(r => {
@@ -184,6 +258,8 @@
             // are what we move around but they don’t carry the id we care about
             const order = Array.from(container.querySelectorAll('.card')).map(c => c.id);
             localStorage.setItem('cardOrder', JSON.stringify(order));
+            // also persist current hidden flags
+            saveHidden();
         }
 
         function loadOrder() {
@@ -199,28 +275,84 @@
         }
 
         function renderCards(list) {
+            cardsList = list; // keep reference for state-saving
             container.innerHTML = '';
             list.forEach(item => {
                 const col = document.createElement('div');
                 // add an extra breakpoint so more cards fit on larger screens
                 col.className = 'col-12 col-sm-6 col-md-4 col-lg-3';
+
                 const card = document.createElement('div');
                 card.className = 'card p-3 draggable clickable';
                 card.id = item.id;
                 card.setAttribute('draggable', 'true');
                 card.dataset.url = item.url;
+
+                // visual state
+                if (editMode) {
+                    card.classList.add('edit-mode');
+                } else {
+                    card.classList.remove('edit-mode');
+                }
+                if (item.hidden) {
+                    card.classList.add('hidden-card');
+                } else {
+                    card.classList.remove('hidden-card');
+                }
+
                 let inner = '';
                 if (item.img) {
                     inner += `<img src="${item.img}" width="300" height="300" class="card-img-top mb-2" alt="${item.title}">`;
                 }
                 inner += `<h5 class="card-title">${item.title}</h5><p class="card-text">${item.desc}</p>`;
                 card.innerHTML = inner;
+
+                // edit-mode hide/unhide control
+                if (editMode) {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn btn-sm btn-outline-secondary edit-hide-btn';
+                    btn.textContent = item.hidden ? 'Unhide' : 'Hide';
+                    btn.addEventListener('click', e => {
+                        e.stopPropagation();
+                        // toggle hidden flag and reposition
+                        item.hidden = !item.hidden;
+                        const idx = list.findIndex(i => i.id === item.id);
+                        if (idx !== -1) {
+                            list.splice(idx, 1);
+                        }
+                        if (item.hidden) {
+                            list.push(item);
+                        } else {
+                            // insert before first hidden card
+                            const firstHidden = list.findIndex(i => i.hidden);
+                            if (firstHidden === -1) {
+                                list.push(item);
+                            } else {
+                                list.splice(firstHidden, 0, item);
+                            }
+                        }
+                        saveOrder();
+                        saveHidden();
+                        renderCards(list);
+                    });
+                    card.appendChild(btn);
+                }
+
                 col.appendChild(card);
+
+                // hide the column entirely when not editing and card is hidden
+                if (item.hidden && !editMode) {
+                    col.style.display = 'none';
+                } else {
+                    col.style.display = '';
+                }
+
                 container.appendChild(col);
                 // attach handlers to both card and its parent column
                 attachDragHandlers(card);
                 attachColumnDropZone(col);
                 card.addEventListener('click', () => {
+                    if (editMode) return; // don't follow links while editing
                     window.location.href = card.dataset.url;
                 });
             });
@@ -343,6 +475,57 @@
                 // cards list uses config or fallback
                 const order = loadOrder();
                 let list = Array.isArray(cfg.cards) ? cfg.cards.slice() : defaultCards.slice();
+
+                // ---- role support ----
+                const rolesFromConfig = Array.isArray(cfg.roles) ? cfg.roles.slice() : [];
+                // persist roles if first load or config changed
+                const existing = loadRoles();
+                if (rolesFromConfig.length && JSON.stringify(existing) !== JSON.stringify(rolesFromConfig)) {
+                    saveRoles(rolesFromConfig);
+                }
+
+                let currentRole = localStorage.getItem('userRole') || '';
+
+                // we’ll compute the manual-hidden set as needed below
+
+                // populate dropdown
+                const roleSelect = document.getElementById('role-select');
+                if (roleSelect) {
+                    const rolesList = loadRoles();
+                    if (rolesList.length === 0) {
+                        roleSelect.style.display = 'none';
+                    } else {
+                        roleSelect.innerHTML = '';
+                        const emptyOpt = document.createElement('option');
+                        emptyOpt.value = '';
+                        emptyOpt.textContent = 'Role...';
+                        roleSelect.appendChild(emptyOpt);
+                        rolesList.forEach(r => {
+                            const opt = document.createElement('option');
+                            opt.value = r.name;
+                            opt.textContent = r.name;
+                            if (r.name === currentRole) opt.selected = true;
+                            roleSelect.appendChild(opt);
+                        });
+                        roleSelect.addEventListener('change', e => {
+                            currentRole = e.target.value;
+                            if (currentRole) {
+                                localStorage.setItem('userRole', currentRole);
+                            } else {
+                                localStorage.removeItem('userRole');
+                            }
+                            // recalc hidden flags and re-render
+                            const hiddenSet = loadHidden();
+                            list.forEach(i => { i.hidden = hiddenSet.has(i.id); });
+                            applyRoleHidden(list);
+                            list = list.filter(i => !i.hidden).concat(list.filter(i => i.hidden));
+                            renderCards(list);
+                        });
+                    }
+                }
+                // ---- end role support ----
+
+                // apply saved order if present
                 if (order) {
                     const map = new Map(list.map(i => [i.id, i]));
                     const ordered = [];
@@ -352,7 +535,25 @@
                     list.forEach(i => { if (!order.includes(i.id)) ordered.push(i); });
                     list = ordered;
                 }
+
+                // load hidden state and push hidden items to end
+                const hiddenSet = loadHidden();
+                list.forEach(i => { i.hidden = hiddenSet.has(i.id); });
+                applyRoleHidden(list);
+                // ensure hidden ones are after visible
+                list = list.filter(i => !i.hidden).concat(list.filter(i => i.hidden));
+
                 renderCards(list);
+
+                // wire up edit toggle button
+                const editBtn = document.getElementById('edit-toggle');
+                if (editBtn) {
+                    editBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        toggleEditMode();
+                    });
+                    updateEditButton();
+                }
 
                 // hook up export link
                 const exp = document.getElementById('export-link');
@@ -381,6 +582,8 @@
                                 const parsed = JSON.parse(text);
                                 if (Array.isArray(parsed)) {
                                     localStorage.setItem('cardOrder', JSON.stringify(parsed));
+                                    // hide markers don't make sense after a fresh import, clear them
+                                    localStorage.removeItem('cardHidden');
                                     // reload to apply new order
                                     window.location.reload();
                                 } else {
@@ -401,6 +604,7 @@
                         e.preventDefault();
                         if (confirm('Are you sure you want to reset order?')) {
                             localStorage.removeItem('cardOrder');
+                            localStorage.removeItem('cardHidden');
                             window.location.reload();
                         }
                     });
