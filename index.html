@@ -65,6 +65,23 @@
             margin: 0 auto;
         }
 
+        /* ensure every card fills its column and ends up the same size */
+        /* make the column a flex container so its child card can stretch */
+        #cards-container .row > [class*="col-"] {
+            display: flex;
+        }
+        /* let cards grow/shrink to fill the column and maintain a column layout */
+        #cards-container .card {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            width: 100%;          /* span entire column width */
+        }
+        /* make the description area take remaining space so cards line up */
+        #cards-container .card .card-text {
+            flex: 1 1 auto;
+        }
+
         /* when the dashboard is in edit mode a small hide/unhide control appears */
         .card.edit-mode {
             position: relative;
@@ -82,12 +99,32 @@
         }
 
         /* ensure images on cards remain square and cover the area */
-        .card-img-top {
+        /* image container ensures a fixed 300×300 area and centers the icon */
+        .card-img-container {
+            /* container height fixed, but width limited to card width
+               prevents the 300px size from spilling out of narrow cards */
             width: 100%;
-			height: auto;
-            /* aspect-ratio: 1 / 1; */
-            object-fit: cover;
+            max-width: 300px;
+            height: 300px;
+            margin: 0 auto 0 auto;       /* center horizontally within card */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;            /* ensure oversized icons can't escape */
         }
+
+        .card-img-top {
+            display: block;            /* treat icon as block so it can be centered */
+            /* size is controlled by container, this ensures the graphic scales */
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;       /* keep the logo square-ish and contained */
+        }
+
+        /* responsive max-width rules no longer needed; container is fixed */
+        
+        /* increase allowed icon size on wider viewports */
+        /* removed in favor of fixed 300px area */
 
         /* simple footer styling using CSS variable */
         .custom-footer {
@@ -385,7 +422,8 @@ fetchConfig('config.json')
 
                 let inner = '';
                 if (item.img) {
-                    inner += `<img src="${item.img}" width="300" height="300" class="card-img-top mb-2" alt="${item.title}">`;
+                    // wrap the icon in a fixed-size flex container to center vertically
+                    inner += `<div class="card-img-container mb-2"><img src="${item.img}" class="card-img-top" alt="${item.title}"></div>`;
                 }
                 inner += `<h5 class="card-title">${item.title}</h5><p class="card-text">${item.desc}</p>`;
                 card.innerHTML = inner;
