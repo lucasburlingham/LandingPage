@@ -21,15 +21,31 @@
     { "id": "card12", "title": "Store", "desc": "Visit our store", "url": "#store", "img": "https://placehold.net/400x400.png?text=Store" },
     { "id": "card13", "title": "Events", "desc": "Upcoming events", "url": "#events", "img": "https://placehold.net/400x400.png?text=Events" }
   ],
-  "roles": [
+  "departments": [
     {
-      "name": "Employee",
+      "name": "IT Department",
       "hidden": ["card4", "card6"]
     },
     {
-      "name": "Manager",
+      "name": "Middle Management",
       "hidden": ["card5"]
-    }
+    }, 
+	{
+	  "name": "HR Department",
+	  "hidden": ["card3", "card7", "card9"]
+	}, 
+	{
+	  "name": "Sales Department",
+	  "hidden": ["card2", "card8", "card10"]
+	}, 
+	{
+	  "name": "Marketing Department",
+	  "hidden": ["card1", "card11", "card12", "card13"]
+	}, 
+	{
+	  "name": "Executive Team",
+	  "hidden": []
+	}
   ],
   "themeColor": "#e8f0fe",
   "accentColor": "#007bff"

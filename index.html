@@ -56,7 +56,8 @@
         .card-placeholder {
             border: 2px dashed #bbb;
             margin: .5rem;
-            height: 120px;
+            /* match even shorter card size for tighter rows */
+            height: 80px;
         }
 
         /* limit card width so they appear smaller */
@@ -105,7 +106,8 @@
                prevents the 300px size from spilling out of narrow cards */
             width: 100%;
             max-width: 300px;
-            height: 300px;
+            /* further reduced height for tighter packing */
+            height: 150px;
             margin: 0 auto 0 auto;       /* center horizontally within card */
             display: flex;
             align-items: center;
@@ -182,27 +184,12 @@
     </style>
 </head>
 <body>
-    <!-- navigation bar with branding opportunity -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <div class="container-fluid">
-            <a id="navbar-brand" class="navbar-brand" href="#">BrandName</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <!-- <li class="nav-item"><a class="nav-link" href="#">Home</a></li> -->
-                    <!-- add more links as needed -->
-                </ul>
-            </div>
-        </div>
-    </nav>
 
     <div class="container py-5" id="main-container">
         <h1 class="mb-4 d-flex align-items-center">
             <span>My Dashboard</span>
             <button id="edit-toggle" class="btn btn-sm btn-outline-secondary ms-3">Edit</button>
-            <select id="role-select" class="form-select form-select-sm ms-auto" style="width:auto;"> <!-- options populated by script -->
+            <select id="department-select" class="form-select form-select-sm ms-auto" style="width:auto;"> <!-- options populated by script -->
             </select>
         </h1>
         <div id="cards-container" class="row g-3">
@@ -302,6 +289,16 @@ fetchConfig('config.json')
         let editMode = false;
         let cardsList = [];
 
+        // migrate legacy localStorage keys from role->department if present
+        if (!localStorage.getItem('departments') && localStorage.getItem('roles')) {
+            localStorage.setItem('departments', localStorage.getItem('roles'));
+            localStorage.removeItem('roles');
+        }
+        if (!localStorage.getItem('userDepartment') && localStorage.getItem('userRole')) {
+            localStorage.setItem('userDepartment', localStorage.getItem('userRole'));
+            localStorage.removeItem('userRole');
+        }
+
         function loadHidden() {
             const raw = localStorage.getItem('cardHidden');
             if (raw) {
@@ -315,23 +312,23 @@ fetchConfig('config.json')
             localStorage.setItem('cardHidden', JSON.stringify(ids));
         }
 
-        // role helpers stored separately so we can persist list and selection
-        function loadRoles() {
-            const raw = localStorage.getItem('roles');
+        // department helpers stored separately so we can persist list and selection
+        function loadDepartments() {
+            const raw = localStorage.getItem('departments');
             if (raw) {
                 try { return JSON.parse(raw); } catch(e) {}
             }
             return [];
         }
-        function saveRoles(arr) {
-            localStorage.setItem('roles', JSON.stringify(arr));
+        function saveDepartments(arr) {
+            localStorage.setItem('departments', JSON.stringify(arr));
         }
 
-        function applyRoleHidden(list) {
-            const roleName = localStorage.getItem('userRole');
-            if (!roleName) return;
-            const roles = loadRoles();
-            const match = roles.find(r => r.name === roleName);
+        function applyDepartmentHidden(list) {
+            const deptName = localStorage.getItem('userDepartment');
+            if (!deptName) return;
+            const depts = loadDepartments();
+            const match = depts.find(d => d.name === deptName);
             if (match && Array.isArray(match.hidden)) {
                 match.hidden.forEach(id => {
                     const item = list.find(i => i.id === id);
@@ -597,54 +594,56 @@ fetchConfig('config.json')
                 const order = loadOrder();
                 let list = Array.isArray(cfg.cards) ? cfg.cards.slice() : defaultCards.slice();
 
-                // ---- role support ----
-                const rolesFromConfig = Array.isArray(cfg.roles) ? cfg.roles.slice() : [];
-                // persist roles if first load or config changed
-                const existing = loadRoles();
-                if (rolesFromConfig.length && JSON.stringify(existing) !== JSON.stringify(rolesFromConfig)) {
-                    saveRoles(rolesFromConfig);
+                // ---- department support ----
+                // allow either new "departments" property or fall back to legacy "roles"
+                const deptsFromConfig = Array.isArray(cfg.departments) ? cfg.departments.slice()
+                                      : Array.isArray(cfg.roles) ? cfg.roles.slice() : [];
+                // persist departments if first load or config changed
+                const existing = loadDepartments();
+                if (deptsFromConfig.length && JSON.stringify(existing) !== JSON.stringify(deptsFromConfig)) {
+                    saveDepartments(deptsFromConfig);
                 }
 
-                let currentRole = localStorage.getItem('userRole') || '';
+                let currentDept = localStorage.getItem('userDepartment') || '';
 
                 // we’ll compute the manual-hidden set as needed below
 
                 // populate dropdown
-                const roleSelect = document.getElementById('role-select');
-                if (roleSelect) {
-                    const rolesList = loadRoles();
-                    if (rolesList.length === 0) {
-                        roleSelect.style.display = 'none';
+                const deptSelect = document.getElementById('department-select');
+                if (deptSelect) {
+                    const deptList = loadDepartments();
+                    if (deptList.length === 0) {
+                        deptSelect.style.display = 'none';
                     } else {
-                        roleSelect.innerHTML = '';
+                        deptSelect.innerHTML = '';
                         const emptyOpt = document.createElement('option');
                         emptyOpt.value = '';
-                        emptyOpt.textContent = 'Role...';
-                        roleSelect.appendChild(emptyOpt);
-                        rolesList.forEach(r => {
+                        emptyOpt.textContent = 'Department...';
+                        deptSelect.appendChild(emptyOpt);
+                        deptList.forEach(d => {
                             const opt = document.createElement('option');
-                            opt.value = r.name;
-                            opt.textContent = r.name;
-                            if (r.name === currentRole) opt.selected = true;
-                            roleSelect.appendChild(opt);
+                            opt.value = d.name;
+                            opt.textContent = d.name;
+                            if (d.name === currentDept) opt.selected = true;
+                            deptSelect.appendChild(opt);
                         });
-                        roleSelect.addEventListener('change', e => {
-                            currentRole = e.target.value;
-                            if (currentRole) {
-                                localStorage.setItem('userRole', currentRole);
+                        deptSelect.addEventListener('change', e => {
+                            currentDept = e.target.value;
+                            if (currentDept) {
+                                localStorage.setItem('userDepartment', currentDept);
                             } else {
-                                localStorage.removeItem('userRole');
+                                localStorage.removeItem('userDepartment');
                             }
                             // recalc hidden flags and re-render
                             const hiddenSet = loadHidden();
                             list.forEach(i => { i.hidden = hiddenSet.has(i.id); });
-                            applyRoleHidden(list);
+                            applyDepartmentHidden(list);
                             list = list.filter(i => !i.hidden).concat(list.filter(i => i.hidden));
                             renderCards(list);
                         });
                     }
                 }
-                // ---- end role support ----
+                // ---- end department support ----
 
                 // apply saved order if present
                 if (order) {
@@ -660,7 +659,7 @@ fetchConfig('config.json')
                 // load hidden state and push hidden items to end
                 const hiddenSet = loadHidden();
                 list.forEach(i => { i.hidden = hiddenSet.has(i.id); });
-                applyRoleHidden(list);
+                applyDepartmentHidden(list);
                 // ensure hidden ones are after visible
                 list = list.filter(i => !i.hidden).concat(list.filter(i => i.hidden));
 
