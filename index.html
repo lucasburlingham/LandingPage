@@ -129,6 +129,19 @@
             color: #555;
             border-bottom-color: #555;
         }
+
+        /* (visibility is handled by JavaScript; CSS just styles the links) */
+        /* footer .export-link,
+        footer #upload-btn,
+        footer #reset-btn {
+            display: none;
+        }
+
+        footer:hover .export-link,
+        footer:hover #upload-btn,
+        footer:hover #reset-btn {
+            display: inline;
+        } */
     </style>
 </head>
 <body>
@@ -170,7 +183,7 @@
         <a href="#" id="export-link" class="export-link">Export order</a>
         <button id="upload-btn" class="export-link" style="margin-left:1rem;">Upload order</button>
         <button id="reset-btn" class="export-link" style="margin-left:1rem;">Reset order</button>
-        <input type="file" id="upload-input" accept="application/json" style="display:none">
+        <input type="file" id="upload-input" accept="application/json" style="display:none;">
     </footer>
 
     <script>
@@ -230,9 +243,15 @@ fetchConfig('config.json')
             }
             const title = document.querySelector('.container h1 span');
             if (title && cfg.branding.siteName) title.textContent = `${cfg.branding.siteName} Dashboard`;
-            const footer = document.querySelector('.custom-footer');
-            if (footer) {
-                footer.innerHTML = `&copy; 2026 ${cfg.branding.footerText || ''}. <a href="${cfg.branding.footerLinkUrl||'#'}" class="text-reset">${cfg.branding.footerLinkText||'Learn more'}</a>`;
+            // update footer text without destroying other elements (export/upload/reset)
+            const footerYearEl = document.getElementById('footer-year');
+            const footerCompanyEl = document.getElementById('footer-company');
+            const footerLinkEl = document.getElementById('footer-link');
+            if (footerYearEl) footerYearEl.textContent = new Date().getFullYear();
+            if (footerCompanyEl) footerCompanyEl.textContent = cfg.branding.footerText || '';
+            if (footerLinkEl) {
+                footerLinkEl.textContent = cfg.branding.footerLinkText || 'Learn more';
+                footerLinkEl.href = cfg.branding.footerLinkUrl || '#';
             }
         }
         if (cfg.cards && Array.isArray(cfg.cards)) {
@@ -672,6 +691,18 @@ fetchConfig('config.json')
                             window.location.reload();
                         }
                     });
+                }
+
+                // footer button visibility managed via JS hover handlers
+                const footer = document.querySelector('.custom-footer');
+                if (footer) {
+                    const controls = footer.querySelectorAll('.export-link, #upload-btn, #reset-btn');
+                    const hideControls = () => controls.forEach(el => el.style.display = 'none');
+                    const showControls = () => controls.forEach(el => el.style.display = 'inline');
+                    // start hidden
+                    hideControls();
+                    footer.addEventListener('mouseenter', showControls);
+                    footer.addEventListener('mouseleave', hideControls);
                 }
             });
         });
