@@ -1,176 +1,314 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Landing Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        :root {
-            /* footer background can be customized by overriding this variable */
-            --footer-bg-color: #f8f9fa;
-            /* theming colour loaded from config.json */
-            --theme-bg: #ffffff;
-            --navbar-bg: #ffffff;
-            /* accent color for outlines, links, buttons */
-            --accent-color: #007bff;
-        }
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="color-scheme" content="light dark">
+	<title>Landing Dashboard</title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+	<style>
+		:root {
+			/* footer background can be customized by overriding this variable */
+			--footer-bg-color: #f8f9fa;
+			/* theming colour loaded from config.json */
+			--theme-bg: #ffffff;
+			--navbar-bg: #ffffff;
+			/* accent color for outlines, links, buttons */
+			--accent-color: #007bff;
+		}
 
-        .navbar {
-            background-color: var(--navbar-bg) !important;
-        }
+		.navbar {
+			background-color: var(--navbar-bg) !important;
+		}
 
-        .card.draggable {
-            cursor: move;
-        }
-        .card.clickable {
-            cursor: pointer;
-        }
+		.card {
+			position: relative;
+			/* needed for handle positioning */
+		}
 
-        /* style applied while a card is being dragged */
-        .card.dragging {
-            border: 2px dashed #444;               /* hand‑drawn look */
-            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
-            background: #fff;
-            opacity: 0.8;                          /* a little transparent */
-        }
+		.card.draggable {
+			cursor: grab;
+		}
 
-        /* highlight potential drop targets on cards */
-        .card.drop-target {
-            outline: 2px dashed var(--accent-color);
-            transform: scale(1.03);
-            transition: transform 0.1s ease-in-out;
-            box-shadow: 0 12px 24px rgba(0,0,0,0.35);
-            z-index: 5; /* sit above neighbors */
-        }
+		.card.dragging {
+			cursor: grabbing;
+		}
 
-        /* column drop target provides a bigger hit area */
-        .col-12.drop-target,
-        .col-sm-6.drop-target,
-        .col-md-4.drop-target,
-        .col-lg-3.drop-target {
-            outline: 3px dashed #007bff;
-            background: rgba(0,123,255,0.05);
-        }
+		.card.clickable {
+			cursor: pointer;
+		}
 
-        .card-placeholder {
-            border: 2px dashed #bbb;
-            margin: .5rem;
-            /* match even shorter card size for tighter rows */
-            height: 80px;
-        }
+		/* style applied while a card is being dragged */
+		.card.dragging {
+			border: 2px dashed #444;
+			/* hand‑drawn look */
+			box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+			background: #fff;
+			opacity: 0.8;
+			/* a little transparent */
+		}
 
-        /* limit card width so they appear smaller */
-        .card {
-            max-width: 18rem;
-            margin: 0 auto;
-        }
+		/* highlight potential drop targets on cards */
+		.card.drop-target {
+			outline: 2px dashed var(--accent-color);
+			transform: scale(1.03);
+			transition: transform 0.1s ease-in-out;
+			box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+			z-index: 5;
+			/* sit above neighbors */
+		}
 
-        /* ensure every card fills its column and ends up the same size */
-        /* make the column a flex container so its child card can stretch */
-        #cards-container .row > [class*="col-"] {
-            display: flex;
-        }
-        /* let cards grow/shrink to fill the column and maintain a column layout */
-        #cards-container .card {
-            flex: 1 1 auto;
-            display: flex;
-            flex-direction: column;
-            width: 100%;          /* span entire column width */
-        }
-        /* make the description area take remaining space so cards line up */
-        #cards-container .card .card-text {
-            flex: 1 1 auto;
-        }
+		/* column drop target provides a bigger hit area */
+		.col-12.drop-target,
+		.col-sm-6.drop-target,
+		.col-md-4.drop-target,
+		.col-lg-3.drop-target {
+			outline: 3px dashed #007bff;
+			background: rgba(0, 123, 255, 0.05);
+		}
 
-        /* when the dashboard is in edit mode a small hide/unhide control appears */
-        .card.edit-mode {
-            position: relative;
-        }
-        .card.edit-mode .edit-hide-btn {
-            position: absolute;
-            top: 0.5rem;
-            right: 0.5rem;
-            z-index: 10;
-        }
+		.card-placeholder {
+			border: 2px dashed #bbb;
+			margin: .5rem;
+			/* match even shorter card size for tighter rows */
+			height: 80px;
+		}
 
-        /* style hidden cards while editing so you can identify them */
-        .hidden-card {
-            opacity: 0.4;
-        }
+		/* limit card width so they appear smaller */
+		.card {
+			max-width: 18rem;
+			margin: 0 auto;
+			/* enable smooth transform for hover/tilt effect */
+			transition: transform 0.15s ease, box-shadow 0.15s ease;
+			transform-style: preserve-3d;
+			backface-visibility: hidden;
+		}
 
-        /* ensure images on cards remain square and cover the area */
-        /* image container ensures a fixed 300×300 area and centers the icon */
-        .card-img-container {
-            /* container height fixed, but width limited to card width
+		/* subtle elevation gain when hovering */
+		.card:hover {
+			box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+		}
+
+		/* show a grab handle indicator on hover */
+		.card.draggable:hover::before {
+			content: '\2630';
+			/* unicode for hamburger/grab icon */
+			position: absolute;
+			top: 0.5rem;
+			left: 0.5rem;
+			font-size: 1.2rem;
+			color: rgba(0, 0, 0, 0.4);
+			pointer-events: none;
+		}
+
+		/* ensure every card fills its column and ends up the same size */
+		/* make the column a flex container so its child card can stretch */
+		#cards-container .row>[class*="col-"] {
+			display: flex;
+		}
+
+		/* let cards grow/shrink to fill the column and maintain a column layout */
+		#cards-container .card {
+			flex: 1 1 auto;
+			display: flex;
+			flex-direction: column;
+			width: 100%;
+			/* span entire column width */
+		}
+
+		/* make the description area take remaining space so cards line up */
+		#cards-container .card .card-text {
+			flex: 1 1 auto;
+		}
+
+		/* when the dashboard is in edit mode a small hide/unhide control appears */
+		.card.edit-mode {
+			position: relative;
+		}
+
+		.card.edit-mode .edit-hide-btn {
+			position: absolute;
+			top: 0.5rem;
+			right: 0.5rem;
+			z-index: 10;
+		}
+
+		/* style hidden cards while editing so you can identify them */
+		.hidden-card {
+			opacity: 0.4;
+		}
+
+		/* ensure images on cards remain square and cover the area */
+		/* image container ensures a fixed 300×300 area and centers the icon */
+		.card-img-container {
+			/* container height fixed, but width limited to card width
                prevents the 300px size from spilling out of narrow cards */
-            width: 100%;
-            max-width: 300px;
-            /* further reduced height for tighter packing */
-            height: 150px;
-            margin: 0 auto 0 auto;       /* center horizontally within card */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;            /* ensure oversized icons can't escape */
-        }
+			width: 100%;
+			max-width: 300px;
+			/* further reduced height for tighter packing */
+			height: 150px;
+			margin: 0 auto 0 auto;
+			/* center horizontally within card */
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			overflow: hidden;
+			/* ensure oversized icons can't escape */
+		}
 
-        .card-img-top {
-            display: block;            /* treat icon as block so it can be centered */
-            /* size is controlled by container, this ensures the graphic scales */
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;       /* keep the logo square-ish and contained */
-        }
+		.card-img-top {
+			display: block;
+			/* treat icon as block so it can be centered */
+			/* size is controlled by container, this ensures the graphic scales */
+			max-width: 100%;
+			max-height: 100%;
+			object-fit: contain;
+			/* keep the logo square-ish and contained */
+		}
 
-        /* responsive max-width rules no longer needed; container is fixed */
-        
-        /* increase allowed icon size on wider viewports */
-        /* removed in favor of fixed 300px area */
+		/* responsive max-width rules no longer needed; container is fixed */
 
-        /* simple footer styling using CSS variable */
-        .custom-footer {
-            background-color: var(--footer-bg-color);
-            padding: 1rem 0;
-            text-align: center;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            z-index: 1030; /* above default content */
-        }
+		/* increase allowed icon size on wider viewports */
+		/* removed in favor of fixed 300px area */
 
-        /* ensure content doesn't sit behind the fixed footer */
-        body {
-            padding-bottom: 4rem; /* slightly larger than footer height */
-            background-color: var(--theme-bg);
-        }
+		/* simple footer styling using CSS variable */
+		.custom-footer {
+			background-color: var(--footer-bg-color);
+			padding: 1rem 0;
+			text-align: center;
+			position: fixed;
+			bottom: 0;
+			left: 0;
+			width: 100%;
+			z-index: 1030;
+			/* above default content */
+		}
 
-        #main-container {
-            background: #fff;
-            border-radius: 0.5rem;
-            padding: 2rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
+		/* dark mode variables and overrides */
+		:root {
+			--card-bg: #ffffff;
+			--text-color: #000000;
+		}
 
-        /* styles for export link in footer */
-        .custom-footer .export-link {
-            color: grey;
-            text-decoration: none;
-            border-bottom: 1px dotted grey;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font: inherit;
-            padding: 0;
-        }
-        .custom-footer .export-link:hover {
-            color: #555;
-            border-bottom-color: #555;
-        }
+		/* automatically apply dark variables if the user prefers dark at system level */
+		@media (prefers-color-scheme: dark) {
+			:root {
+				--theme-bg: #121212;
+				--navbar-bg: #1f1f1f;
+				--footer-bg-color: #1f1f1f;
+				--accent-color: #bb86fc;
+				--card-bg: #1e1e1e;
+				--text-color: #e0e0e0;
+			}
+		}
 
-        /* (visibility is handled by JavaScript; CSS just styles the links) */
-        /* footer .export-link,
+		[data-theme="dark"] {
+			--theme-bg: #121212;
+			--navbar-bg: #1f1f1f;
+			--footer-bg-color: #1f1f1f;
+			--accent-color: #bb86fc;
+			--card-bg: #1e1e1e;
+			--text-color: #e0e0e0;
+		}
+
+		/* apply variable-driven backgrounds and text colors */
+		body {
+			color: var(--text-color);
+		}
+
+		.navbar,
+		.card,
+		#main-container {
+			background-color: var(--card-bg);
+			color: var(--text-color);
+		}
+
+		/* ensure content doesn't sit behind the fixed footer */
+		body {
+			padding-bottom: 4rem;
+			/* slightly larger than footer height */
+			background-color: var(--theme-bg);
+		}
+
+		#main-container {
+			background: var(--card-bg);
+			border-radius: 0.5rem;
+			padding: 2rem;
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+		}
+
+		/* styles for export link in footer */
+		.custom-footer .export-link {
+			color: grey;
+			text-decoration: none;
+			border-bottom: 1px dotted grey;
+			background: none;
+			border: none;
+			cursor: pointer;
+			font: inherit;
+			padding: 0;
+		}
+
+		.custom-footer .export-link:hover {
+			color: #555;
+			border-bottom-color: #555;
+		}
+
+		/* adjust export-link colors in dark theme */
+		[data-theme="dark"] .custom-footer .export-link {
+			color: #ccc;
+		}
+
+		[data-theme="dark"] .custom-footer .export-link:hover {
+			color: #fff;
+			border-bottom-color: #fff;
+		}
+
+		/* ensure footer body text is light enough on dark background */
+		[data-theme="dark"] .custom-footer,
+		[data-theme="dark"] .custom-footer.text-muted {
+			color: #ccc;
+		}
+
+		/* make the branding/link text slightly brighter */
+		[data-theme="dark"] .custom-footer #footer-link,
+		[data-theme="dark"] .custom-footer #footer-link:hover {
+			color: #fff;
+		}
+
+		/* the year/company/link should be bright in dark theme */
+		[data-theme="dark"] #footer-year,
+		[data-theme="dark"] #footer-company {
+			color: #fff;
+		}
+
+		/* link specifically needs !important to override Bootstrap's text-reset */
+		[data-theme="dark"] #footer-link {
+			color: #fff !important;
+		}
+
+
+
+		/* hide action links/buttons until footer hover */
+		.custom-footer .export-link,
+		.custom-footer #upload-btn,
+		.custom-footer #reset-btn,
+		.custom-footer #admin-link,
+		.custom-footer #theme-toggle {
+			display: none;
+		}
+
+		.custom-footer:hover .export-link,
+		.custom-footer:hover #upload-btn,
+		.custom-footer:hover #reset-btn,
+		.custom-footer:hover #admin-link,
+		.custom-footer:hover #theme-toggle {
+			display: inline;
+		}
+
+		/* (visibility is handled by JavaScript; CSS just styles the links) */
+		/* footer .export-link,
         footer #upload-btn,
         footer #reset-btn {
             display: none;
@@ -181,590 +319,685 @@
         footer:hover #reset-btn {
             display: inline;
         } */
-    </style>
+	</style>
 </head>
+
 <body>
 
-    <div class="container py-5" id="main-container">
-        <h1 class="mb-4 d-flex align-items-center">
-            <span>My Dashboard</span>
-            <button id="edit-toggle" class="btn btn-sm btn-outline-secondary ms-3">Edit</button>
-            <select id="department-select" class="form-select form-select-sm ms-auto" style="width:auto;"> <!-- options populated by script -->
-            </select>
-        </h1>
-        <div id="cards-container" class="row g-3">
-            <!-- cards injected here -->
-        </div>
-    </div>
+	<div class="container py-5" id="main-container">
+		<h1 class="mb-4 d-flex align-items-center">
+			<span>My Dashboard</span>
+			<button id="edit-toggle" class="btn btn-sm btn-outline-secondary ms-3">Edit</button>
+			<select id="department-select" class="form-select form-select-sm ms-auto" style="width:auto;">
+				<!-- options populated by script -->
+			</select>
+		</h1>
+		<div id="cards-container" class="row g-3">
+			<!-- cards injected here -->
+		</div>
+	</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- simple footer at the bottom; change --footer-bg-color in :root to customize -->
-    <footer class="custom-footer text-muted">
-        &copy; <span id="footer-year"></span> <span id="footer-company"></span>. <a href="#" id="footer-link" class="text-reset">Learn more</a>
-        <!-- export order link centered in footer -->
-        <br>
-        <a href="#" id="export-link" class="export-link">Export order</a>
-        <button id="download-config-btn" class="export-link" style="margin-left:1rem;">Download config</button>
-        <button id="upload-btn" class="export-link" style="margin-left:1rem;">Upload order</button>
-        <button id="reset-btn" class="export-link" style="margin-left:1rem;">Reset order</button>
-        <a href="admin.html" id="admin-link" class="export-link" style="margin-left:1rem;">Admin</a>
-        <input type="file" id="upload-input" accept="application/json" style="display:none;">
-    </footer>
+	<!-- simple footer at the bottom; change --footer-bg-color in :root to customize -->
+	<footer class="custom-footer text-muted">
+		&copy; <span id="footer-year"></span> <span id="footer-company"></span>. <a href="#" id="footer-link"
+			class="text-reset">Learn more</a>
+		<!-- export order link centered in footer -->
+		<br>
+		<a href="#" id="export-link" class="export-link">Export order</a>
+		<button id="download-config-btn" class="export-link" style="margin-left:1rem;">Download config</button>
+		<button id="upload-btn" class="export-link" style="margin-left:1rem;">Upload order</button>
+		<button id="reset-btn" class="export-link" style="margin-left:1rem;">Reset order</button>
+		<a href="admin.html" id="admin-link" class="export-link" style="margin-left:1rem;">Admin</a>
+		<!-- theme toggle added for light/dark mode -->
+		<button id="theme-toggle" class="export-link" style="margin-left:1rem;">Dark Mode</button>
+		<input type="file" id="upload-input" accept="application/json" style="display:none;">
+	</footer>
 
-    <script>
-        // helper handlers for drop-target highlighting
-        function dragEnter(e) {
-            e.preventDefault();
-            if (this === draggingEl) return;
-            // if this is a column but the mouse is over a child (likely a card), skip
-            if (this.classList.contains('col-12') || this.classList.contains('col-sm-6') ||
-                this.classList.contains('col-md-4') || this.classList.contains('col-lg-3')) {
-                if (e.target !== this) {
-                    // ignore events from inside child elements so the card highlights instead
-                    return;
-                }
-            }
-            this.classList.add('drop-target');
-            // if a card is highlighted, clear its column so only one shape shows
-            if (this.classList.contains('card')) {
-                const col = this.parentElement;
-                if (col) col.classList.remove('drop-target');
-            }
-        }
+	<script>
+		// helper handlers for drop-target highlighting
+		function dragEnter(e) {
+			e.preventDefault();
+			if (this === draggingEl) return;
+			// if this is a column but the mouse is over a child (likely a card), skip
+			if (this.classList.contains('col-12') || this.classList.contains('col-sm-6') ||
+				this.classList.contains('col-md-4') || this.classList.contains('col-lg-3')) {
+				if (e.target !== this) {
+					// ignore events from inside child elements so the card highlights instead
+					return;
+				}
+			}
+			this.classList.add('drop-target');
+			// if a card is highlighted, clear its column so only one shape shows
+			if (this.classList.contains('card')) {
+				const col = this.parentElement;
+				if (col) col.classList.remove('drop-target');
+			}
+		}
 
-        function dragLeave(e) {
-            if (this !== draggingEl) {
-                this.classList.remove('drop-target');
-            }
-        }
+		function dragLeave(e) {
+			if (this !== draggingEl) {
+				// avoid flicker when moving between children of the same element
+				const rel = e.relatedTarget;
+				if (rel && this.contains(rel)) {
+					return;
+				}
+				this.classList.remove('drop-target');
+			}
+		}
 
-// configuration helpers; defaultCards acts as a fallback if config.json (or example) cannot be loaded
-const defaultCards = [];
+		// configuration helpers; defaultCards acts as a fallback if config.json (or example) cannot be loaded
 
-// helper to attempt loading a requested file, falling back to example
-function fetchConfig(path) {
-    return fetch(path).then(r => {
-        if (!r.ok) throw new Error(`${path} not available`);
-        return r.json();
-    });
-}
+		// theme management --------------------------------------------------
+		function applyTheme(dark) {
+			if (dark) {
+				document.body.setAttribute('data-theme', 'dark');
+				localStorage.setItem('darkMode', 'true');
+			} else {
+				document.body.removeAttribute('data-theme');
+				localStorage.removeItem('darkMode');
+			}
+		}
+		function updateThemeToggleText() {
+			const btn = document.getElementById('theme-toggle');
+			if (!btn) return;
+			btn.textContent = document.body.hasAttribute('data-theme') ? 'Light Mode' : 'Dark Mode';
+		}
 
-// load configuration and apply theme/branding/cards
-fetchConfig('config.json')
-    .catch(() => fetchConfig('config.json.example'))
-    .then(cfg => {
-        if (cfg.themeColor) {
-            document.documentElement.style.setProperty('--theme-bg', cfg.themeColor);
-            document.documentElement.style.setProperty('--navbar-bg', cfg.themeColor);
-        }
-        if (cfg.accentColor) {
-            document.documentElement.style.setProperty('--accent-color', cfg.accentColor);
-        }
-        if (cfg.branding) {
-            const brand = document.getElementById('navbar-brand');
-            if (brand) {
-                brand.textContent = cfg.branding.siteName || brand.textContent;
-                if (cfg.branding.navbarHref) brand.href = cfg.branding.navbarHref;
-            }
-            const title = document.querySelector('.container h1 span');
-            if (title && cfg.branding.siteName) title.textContent = `${cfg.branding.siteName} Dashboard`;
-            // update footer text without destroying other elements (export/upload/reset)
-            const footerYearEl = document.getElementById('footer-year');
-            const footerCompanyEl = document.getElementById('footer-company');
-            const footerLinkEl = document.getElementById('footer-link');
-            if (footerYearEl) footerYearEl.textContent = new Date().getFullYear();
-            if (footerCompanyEl) footerCompanyEl.textContent = cfg.branding.footerText || '';
-            if (footerLinkEl) {
-                footerLinkEl.textContent = cfg.branding.footerLinkText || 'Learn more';
-                footerLinkEl.href = cfg.branding.footerLinkUrl || '#';
-            }
-        }
-        if (cfg.cards && Array.isArray(cfg.cards)) {
-            // update list variable and re-render if already created
-            defaultCards.splice(0, defaultCards.length, ...cfg.cards);
-        }
-    }).catch(console.warn);
+		// initialize theme from storage or system preference
+		function initTheme() {
+			const stored = localStorage.getItem('darkMode');
+			if (stored === 'true') {
+				applyTheme(true);
+			} else if (stored === 'false') {
+				applyTheme(false);
+			} else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+				// no stored preference, follow system
+				applyTheme(true);
+			}
+		}
+		initTheme();
 
+		// update toggle text once DOM ready
+		window.addEventListener('DOMContentLoaded', updateThemeToggleText);
 
-        // editing state and storage
-        let editMode = false;
-        let cardsList = [];
+		// automatically respond to changes in system preference when no override present
+		if (window.matchMedia) {
+			const mql = window.matchMedia('(prefers-color-scheme: dark)');
+			mql.addEventListener('change', e => {
+				if (!localStorage.getItem('darkMode')) {
+					applyTheme(e.matches);
+					updateThemeToggleText();
+				}
+			});
+		}
 
-        // migrate legacy localStorage keys from role->department if present
-        if (!localStorage.getItem('departments') && localStorage.getItem('roles')) {
-            localStorage.setItem('departments', localStorage.getItem('roles'));
-            localStorage.removeItem('roles');
-        }
-        if (!localStorage.getItem('userDepartment') && localStorage.getItem('userRole')) {
-            localStorage.setItem('userDepartment', localStorage.getItem('userRole'));
-            localStorage.removeItem('userRole');
-        }
+		// will be wired up later once elements exist
 
-        function loadHidden() {
-            const raw = localStorage.getItem('cardHidden');
-            if (raw) {
-                try { return new Set(JSON.parse(raw)); } catch(e) { }
-            }
-            return new Set();
-        }
+		const defaultCards = [];
 
-        function saveHidden() {
-            const ids = cardsList.filter(i => i.hidden).map(i => i.id);
-            localStorage.setItem('cardHidden', JSON.stringify(ids));
-        }
+		// helper to attempt loading a requested file, falling back to example
+		function fetchConfig(path) {
+			return fetch(path).then(r => {
+				if (!r.ok) throw new Error(`${path} not available`);
+				return r.json();
+			});
+		}
 
-        // department helpers stored separately so we can persist list and selection
-        function loadDepartments() {
-            const raw = localStorage.getItem('departments');
-            if (raw) {
-                try { return JSON.parse(raw); } catch(e) {}
-            }
-            return [];
-        }
-        function saveDepartments(arr) {
-            localStorage.setItem('departments', JSON.stringify(arr));
-        }
-
-        function applyDepartmentHidden(list) {
-            const deptName = localStorage.getItem('userDepartment');
-            if (!deptName) return;
-            const depts = loadDepartments();
-            const match = depts.find(d => d.name === deptName);
-            if (match && Array.isArray(match.hidden)) {
-                match.hidden.forEach(id => {
-                    const item = list.find(i => i.id === id);
-                    if (item) item.hidden = true;
-                });
-            }
-        }
-
-        function toggleEditMode() {
-            editMode = !editMode;
-            updateEditButton();
-            renderCards(cardsList);
-        }
-
-        function updateEditButton() {
-            const btn = document.getElementById('edit-toggle');
-            if (btn) btn.textContent = editMode ? 'Done' : 'Edit';
-        }
-
-        function loadConfig() {
-            // try primary config first, then example fallback
-            return fetch('config.json')
-                .then(r => {
-                    if (!r.ok) throw new Error('primary config not ok');
-                    return r.json();
-                })
-                .catch(() => {
-                    return fetch('config.json.example')
-                        .then(r => {
-                            if (!r.ok) throw new Error('fallback config not ok');
-                            return r.json();
-                        });
-                })
-                .catch(err => {
-                    console.error('failed to load any config:', err);
-                    return {};
-                });
-        }
-
-        const container = document.getElementById('cards-container');
-
-        function saveOrder() {
-            // grab the actual cards, not their parent columns, since the columns
-            // are what we move around but they don’t carry the id we care about
-            const order = Array.from(container.querySelectorAll('.card')).map(c => c.id);
-            localStorage.setItem('cardOrder', JSON.stringify(order));
-            // also persist current hidden flags
-            saveHidden();
-        }
-
-        function loadOrder() {
-            const saved = localStorage.getItem('cardOrder');
-            if (saved) {
-                try {
-                    return JSON.parse(saved);
-                } catch (e) {
-                    console.error('invalid order in storage');
-                }
-            }
-            return null;
-        }
-
-        function renderCards(list) {
-            cardsList = list; // keep reference for state-saving
-            container.innerHTML = '';
-            list.forEach(item => {
-                const col = document.createElement('div');
-                // add an extra breakpoint so more cards fit on larger screens
-                col.className = 'col-12 col-sm-6 col-md-4 col-lg-3';
-
-                const card = document.createElement('div');
-                card.className = 'card p-3 draggable clickable';
-                card.id = item.id;
-                card.setAttribute('draggable', 'true');
-                card.dataset.url = item.url;
-
-                // visual state
-                if (editMode) {
-                    card.classList.add('edit-mode');
-                } else {
-                    card.classList.remove('edit-mode');
-                }
-                if (item.hidden) {
-                    card.classList.add('hidden-card');
-                } else {
-                    card.classList.remove('hidden-card');
-                }
-
-                let inner = '';
-                if (item.img) {
-                    // wrap the icon in a fixed-size flex container to center vertically
-                    inner += `<div class="card-img-container mb-2"><img src="${item.img}" class="card-img-top" alt="${item.title}"></div>`;
-                }
-                inner += `<h5 class="card-title">${item.title}</h5><p class="card-text">${item.desc}</p>`;
-                card.innerHTML = inner;
-
-                // edit-mode hide/unhide control
-                if (editMode) {
-                    const btn = document.createElement('button');
-                    btn.className = 'btn btn-sm btn-outline-secondary edit-hide-btn';
-                    btn.textContent = item.hidden ? 'Unhide' : 'Hide';
-                    btn.addEventListener('click', e => {
-                        e.stopPropagation();
-                        // toggle hidden flag and reposition
-                        item.hidden = !item.hidden;
-                        const idx = list.findIndex(i => i.id === item.id);
-                        if (idx !== -1) {
-                            list.splice(idx, 1);
-                        }
-                        if (item.hidden) {
-                            list.push(item);
-                        } else {
-                            // insert before first hidden card
-                            const firstHidden = list.findIndex(i => i.hidden);
-                            if (firstHidden === -1) {
-                                list.push(item);
-                            } else {
-                                list.splice(firstHidden, 0, item);
-                            }
-                        }
-                        saveOrder();
-                        saveHidden();
-                        renderCards(list);
-                    });
-                    card.appendChild(btn);
-                }
-
-                col.appendChild(card);
-
-                // hide the column entirely when not editing and card is hidden
-                if (item.hidden && !editMode) {
-                    col.style.display = 'none';
-                } else {
-                    col.style.display = '';
-                }
-
-                container.appendChild(col);
-                // attach handlers to both card and its parent column
-                attachDragHandlers(card);
-                attachColumnDropZone(col);
-                card.addEventListener('click', () => {
-                    if (editMode) return; // don't follow links while editing
-                    window.location.href = card.dataset.url;
-                });
-            });
-        }
-
-        function attachDragHandlers(el) {
-            el.addEventListener('dragstart', dragStart);
-            el.addEventListener('dragenter', dragEnter);
-            el.addEventListener('dragover', dragOver);
-            el.addEventListener('dragleave', dragLeave);
-            el.addEventListener('drop', dragDrop);
-            el.addEventListener('dragend', dragEnd);
-        }
-
-        // columns themselves can act as generous drop targets without starting a drag
-        function attachColumnDropZone(col) {
-            col.addEventListener('dragenter', dragEnter);
-            col.addEventListener('dragover', dragOver);
-            col.addEventListener('dragleave', dragLeave);
-            col.addEventListener('drop', dragDrop);
-        }
-
-        let draggingEl = null;
-
-        function dragStart(e) {
-            draggingEl = this;
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/plain', this.id);
-            this.classList.add('opacity-50', 'dragging');
-            // clear any stray highlights before drag begins
-            container.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
-            // start random-direction jiggle
-            startJiggle();
-        }
-
-        function dragOver(e) {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-        }
-
-        function dragDrop(e) {
-            e.stopPropagation();
-            // cleanup any hover highlights on the target
-            this.classList.remove('drop-target');
-            const draggedId = e.dataTransfer.getData('text/plain');
-            const dragged = document.getElementById(draggedId);
-            if (dragged && dragged !== this) {
-                // figure out column context: if drop on a card, use its parent; if on a col, use it directly
-                const draggedCol = dragged.parentElement;
-                const targetCol = this.classList.contains('col-12') ? this : this.parentElement;
-
-                const swapNodes = (a, b) => {
-                    const parent = a.parentNode;
-                    const siblingA = a.nextSibling;
-                    const siblingB = b.nextSibling;
-                    parent.insertBefore(a, siblingB);
-                    parent.insertBefore(b, siblingA);
-                };
-
-                if (targetCol && targetCol !== draggedCol) {
-                    swapNodes(draggedCol, targetCol);
-                    saveOrder();
-                }
-            }
-            return false;
-        }
-
-        function dragEnd(e) {
-            this.classList.remove('opacity-50', 'dragging');
-            // remove any lingering drop targets
-            container.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
-        }
+		// load configuration and apply theme/branding/cards
+		fetchConfig('config.json')
+			.catch(() => fetchConfig('config.json.example'))
+			.then(cfg => {
+				if (cfg.themeColor) {
+					document.documentElement.style.setProperty('--theme-bg', cfg.themeColor);
+					document.documentElement.style.setProperty('--navbar-bg', cfg.themeColor);
+				}
+				if (cfg.accentColor) {
+					document.documentElement.style.setProperty('--accent-color', cfg.accentColor);
+				}
+				if (cfg.branding) {
+					const brand = document.getElementById('navbar-brand');
+					if (brand) {
+						brand.textContent = cfg.branding.siteName || brand.textContent;
+						if (cfg.branding.navbarHref) brand.href = cfg.branding.navbarHref;
+					}
+					const title = document.querySelector('.container h1 span');
+					if (title && cfg.branding.siteName) {
+						title.textContent = `${cfg.branding.siteName} Dashboard`;
+					}
+					// also update the page title itself so the browser tab reflects the brand
+					if (cfg.branding && cfg.branding.siteName) {
+						document.title = `${cfg.branding.siteName} Dashboard`;
+					}
+					// update footer text without destroying other elements (export/upload/reset)
+					const footerYearEl = document.getElementById('footer-year');
+					const footerCompanyEl = document.getElementById('footer-company');
+					const footerLinkEl = document.getElementById('footer-link');
+					if (footerYearEl) footerYearEl.textContent = new Date().getFullYear();
+					if (footerCompanyEl) footerCompanyEl.textContent = cfg.branding.footerText || '';
+					if (footerLinkEl) {
+						footerLinkEl.textContent = cfg.branding.footerLinkText || 'Learn more';
+						footerLinkEl.href = cfg.branding.footerLinkUrl || '#';
+					}
+				}
+				if (cfg.cards && Array.isArray(cfg.cards)) {
+					// update list variable and re-render if already created
+					defaultCards.splice(0, defaultCards.length, ...cfg.cards);
+				}
+			}).catch(console.warn);
 
 
-        // initialize on load
-        // export the current card order from localStorage as a JSON file
-        function exportOrder() {
-            const order = localStorage.getItem('cardOrder') || '[]';
-            try {
-                const blob = new Blob([order], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'order.json';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            } catch (e) {
-                console.error('export failed', e);
-            }
-        }
+		// editing state and storage
+		let editMode = false;
+		let cardsList = [];
 
-        document.addEventListener('DOMContentLoaded', () => {
-            loadConfig().then(cfg => {
-                // apply branding from config
-                const branding = cfg.branding || {};
-                const siteName = branding.siteName || 'BrandName';
-                const navbarHref = branding.navbarHref || '#';
-                const footerText = branding.footerText || 'Your Company';
-                const footerLinkText = branding.footerLinkText || 'Learn more';
-                const footerLinkUrl = branding.footerLinkUrl || '#';
+		// migrate legacy localStorage keys from role->department if present
+		if (!localStorage.getItem('departments') && localStorage.getItem('roles')) {
+			localStorage.setItem('departments', localStorage.getItem('roles'));
+			localStorage.removeItem('roles');
+		}
+		if (!localStorage.getItem('userDepartment') && localStorage.getItem('userRole')) {
+			localStorage.setItem('userDepartment', localStorage.getItem('userRole'));
+			localStorage.removeItem('userRole');
+		}
 
-                const navBrandEl = document.getElementById('navbar-brand');
-                if (navBrandEl) {
-                    navBrandEl.textContent = siteName;
-                    navBrandEl.href = navbarHref;
-                }
+		function loadHidden() {
+			const raw = localStorage.getItem('cardHidden');
+			if (raw) {
+				try { return new Set(JSON.parse(raw)); } catch (e) { }
+			}
+			return new Set();
+		}
 
-                const footerYearEl = document.getElementById('footer-year');
-                const footerCompanyEl = document.getElementById('footer-company');
-                const footerLinkEl = document.getElementById('footer-link');
-                if (footerYearEl) footerYearEl.textContent = new Date().getFullYear();
-                if (footerCompanyEl) footerCompanyEl.textContent = footerText;
-                if (footerLinkEl) {
-                    footerLinkEl.textContent = footerLinkText;
-                    footerLinkEl.href = footerLinkUrl;
-                }
+		function saveHidden() {
+			const ids = cardsList.filter(i => i.hidden).map(i => i.id);
+			localStorage.setItem('cardHidden', JSON.stringify(ids));
+		}
 
-                // cards list uses config or fallback
-                const order = loadOrder();
-                let list = Array.isArray(cfg.cards) ? cfg.cards.slice() : defaultCards.slice();
+		// department helpers stored separately so we can persist list and selection
+		function loadDepartments() {
+			const raw = localStorage.getItem('departments');
+			if (raw) {
+				try { return JSON.parse(raw); } catch (e) { }
+			}
+			return [];
+		}
+		function saveDepartments(arr) {
+			localStorage.setItem('departments', JSON.stringify(arr));
+		}
 
-                // ---- department support ----
-                // allow either new "departments" property or fall back to legacy "roles"
-                const deptsFromConfig = Array.isArray(cfg.departments) ? cfg.departments.slice()
-                                      : Array.isArray(cfg.roles) ? cfg.roles.slice() : [];
-                // persist departments if first load or config changed
-                const existing = loadDepartments();
-                if (deptsFromConfig.length && JSON.stringify(existing) !== JSON.stringify(deptsFromConfig)) {
-                    saveDepartments(deptsFromConfig);
-                }
+		function applyDepartmentHidden(list) {
+			const deptName = localStorage.getItem('userDepartment');
+			if (!deptName) return;
+			const depts = loadDepartments();
+			const match = depts.find(d => d.name === deptName);
+			if (match && Array.isArray(match.hidden)) {
+				match.hidden.forEach(id => {
+					const item = list.find(i => i.id === id);
+					if (item) item.hidden = true;
+				});
+			}
+		}
 
-                let currentDept = localStorage.getItem('userDepartment') || '';
+		function toggleEditMode() {
+			editMode = !editMode;
+			updateEditButton();
+			renderCards(cardsList);
+		}
 
-                // we’ll compute the manual-hidden set as needed below
+		function updateEditButton() {
+			const btn = document.getElementById('edit-toggle');
+			if (btn) btn.textContent = editMode ? 'Done' : 'Edit';
+		}
 
-                // populate dropdown
-                const deptSelect = document.getElementById('department-select');
-                if (deptSelect) {
-                    const deptList = loadDepartments();
-                    if (deptList.length === 0) {
-                        deptSelect.style.display = 'none';
-                    } else {
-                        deptSelect.innerHTML = '';
-                        const emptyOpt = document.createElement('option');
-                        emptyOpt.value = '';
-                        emptyOpt.textContent = 'Department...';
-                        deptSelect.appendChild(emptyOpt);
-                        deptList.forEach(d => {
-                            const opt = document.createElement('option');
-                            opt.value = d.name;
-                            opt.textContent = d.name;
-                            if (d.name === currentDept) opt.selected = true;
-                            deptSelect.appendChild(opt);
-                        });
-                        deptSelect.addEventListener('change', e => {
-                            currentDept = e.target.value;
-                            if (currentDept) {
-                                localStorage.setItem('userDepartment', currentDept);
-                            } else {
-                                localStorage.removeItem('userDepartment');
-                            }
-                            // recalc hidden flags and re-render
-                            const hiddenSet = loadHidden();
-                            list.forEach(i => { i.hidden = hiddenSet.has(i.id); });
-                            applyDepartmentHidden(list);
-                            list = list.filter(i => !i.hidden).concat(list.filter(i => i.hidden));
-                            renderCards(list);
-                        });
-                    }
-                }
-                // ---- end department support ----
+		function loadConfig() {
+			// try primary config first, then example fallback
+			return fetch('config.json')
+				.then(r => {
+					if (!r.ok) throw new Error('primary config not ok');
+					return r.json();
+				})
+				.catch(() => {
+					return fetch('config.json.example')
+						.then(r => {
+							if (!r.ok) throw new Error('fallback config not ok');
+							return r.json();
+						});
+				})
+				.catch(err => {
+					console.error('failed to load any config:', err);
+					return {};
+				});
+		}
 
-                // apply saved order if present
-                if (order) {
-                    const map = new Map(list.map(i => [i.id, i]));
-                    const ordered = [];
-                    order.forEach(id => {
-                        if (map.has(id)) ordered.push(map.get(id));
-                    });
-                    list.forEach(i => { if (!order.includes(i.id)) ordered.push(i); });
-                    list = ordered;
-                }
+		const container = document.getElementById('cards-container');
 
-                // load hidden state and push hidden items to end
-                const hiddenSet = loadHidden();
-                list.forEach(i => { i.hidden = hiddenSet.has(i.id); });
-                applyDepartmentHidden(list);
-                // ensure hidden ones are after visible
-                list = list.filter(i => !i.hidden).concat(list.filter(i => i.hidden));
+		function saveOrder() {
+			// grab the actual cards, not their parent columns, since the columns
+			// are what we move around but they don’t carry the id we care about
+			const order = Array.from(container.querySelectorAll('.card')).map(c => c.id);
+			localStorage.setItem('cardOrder', JSON.stringify(order));
+			// also persist current hidden flags
+			saveHidden();
+		}
 
-                renderCards(list);
+		function loadOrder() {
+			const saved = localStorage.getItem('cardOrder');
+			if (saved) {
+				try {
+					return JSON.parse(saved);
+				} catch (e) {
+					console.error('invalid order in storage');
+				}
+			}
+			return null;
+		}
 
-                // wire up edit toggle button
-                const editBtn = document.getElementById('edit-toggle');
-                if (editBtn) {
-                    editBtn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        toggleEditMode();
-                    });
-                    updateEditButton();
-                }
+		function renderCards(list) {
+			cardsList = list; // keep reference for state-saving
+			container.innerHTML = '';
+			list.forEach(item => {
+				const col = document.createElement('div');
+				// add an extra breakpoint so more cards fit on larger screens
+				col.className = 'col-12 col-sm-6 col-md-4 col-lg-3';
 
-                // hook up export link
-                const exp = document.getElementById('export-link');
-                if (exp) {
-                    exp.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        exportOrder();
-                    });
-                }
-                // download full config file
-                const downloadCfgBtn = document.getElementById('download-config-btn');
-                if (downloadCfgBtn) {
-                    downloadCfgBtn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        fetchConfig('config.json')
-                            .catch(() => fetchConfig('config.json.example'))
-                            .then(cfg => {
-                                const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
-                                const url = URL.createObjectURL(blob);
-                                const a = document.createElement('a');
-                                a.href = url;
-                                a.download = 'config.json';
-                                document.body.appendChild(a);
-                                a.click();
-                                document.body.removeChild(a);
-                                URL.revokeObjectURL(url);
-                            }).catch(console.error);
-                    });
-                }
+				const card = document.createElement('div');
+				card.className = 'card p-3 draggable clickable';
+				card.id = item.id;
+				card.setAttribute('draggable', 'true');
+				card.dataset.url = item.url;
 
-                // upload support
-                const uploadBtn = document.getElementById('upload-btn');
-                const uploadInput = document.getElementById('upload-input');
-                if (uploadBtn && uploadInput) {
-                    uploadBtn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        uploadInput.click();
-                    });
-                    uploadInput.addEventListener('change', function() {
-                        const file = this.files && this.files[0];
-                        if (!file) return;
-                        const reader = new FileReader();
-                        reader.onload = function(evt) {
-                            try {
-                                const text = evt.target.result;
-                                const parsed = JSON.parse(text);
-                                if (Array.isArray(parsed)) {
-                                    localStorage.setItem('cardOrder', JSON.stringify(parsed));
-                                    // hide markers don't make sense after a fresh import, clear them
-                                    localStorage.removeItem('cardHidden');
-                                    // reload to apply new order
-                                    window.location.reload();
-                                } else {
-                                    alert('Invalid format; expected an array');
-                                }
-                            } catch (err) {
-                                alert('Failed to parse JSON: ' + err.message);
-                            }
-                        };
-                        reader.readAsText(file);
-                    });
-                }
+				// visual state
+				if (editMode) {
+					card.classList.add('edit-mode');
+				} else {
+					card.classList.remove('edit-mode');
+				}
+				if (item.hidden) {
+					card.classList.add('hidden-card');
+				} else {
+					card.classList.remove('hidden-card');
+				}
 
-                // reset support
-                const resetBtn = document.getElementById('reset-btn');
-                if (resetBtn) {
-                    resetBtn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        if (confirm('Are you sure you want to reset order?')) {
-                            localStorage.removeItem('cardOrder');
-                            localStorage.removeItem('cardHidden');
-                            window.location.reload();
-                        }
-                    });
-                }
+				let inner = '';
+				if (item.img) {
+					// wrap the icon in a fixed-size flex container to center vertically
+					inner += `<div class="card-img-container mb-2"><img src="${item.img}" class="card-img-top" alt="${item.title}"></div>`;
+				}
+				inner += `<h5 class="card-title">${item.title}</h5><p class="card-text">${item.desc}</p>`;
+				card.innerHTML = inner;
 
-                // footer button visibility managed via JS hover handlers
-                const footer = document.querySelector('.custom-footer');
-                if (footer) {
-                    const controls = footer.querySelectorAll('.export-link, #upload-btn, #reset-btn');
-                    const hideControls = () => controls.forEach(el => el.style.display = 'none');
-                    const showControls = () => controls.forEach(el => el.style.display = 'inline');
-                    // start hidden
-                    hideControls();
-                    footer.addEventListener('mouseenter', showControls);
-                    footer.addEventListener('mouseleave', hideControls);
-                }
-            });
-        });
-    </script>
+				// edit-mode hide/unhide control
+				if (editMode) {
+					const btn = document.createElement('button');
+					btn.className = 'btn btn-sm btn-outline-secondary edit-hide-btn';
+					btn.textContent = item.hidden ? 'Unhide' : 'Hide';
+					btn.addEventListener('click', e => {
+						e.stopPropagation();
+						// toggle hidden flag and reposition
+						item.hidden = !item.hidden;
+						const idx = list.findIndex(i => i.id === item.id);
+						if (idx !== -1) {
+							list.splice(idx, 1);
+						}
+						if (item.hidden) {
+							list.push(item);
+						} else {
+							// insert before first hidden card
+							const firstHidden = list.findIndex(i => i.hidden);
+							if (firstHidden === -1) {
+								list.push(item);
+							} else {
+								list.splice(firstHidden, 0, item);
+							}
+						}
+						saveOrder();
+						saveHidden();
+						renderCards(list);
+					});
+					card.appendChild(btn);
+				}
+
+				col.appendChild(card);
+
+				// hide the column entirely when not editing and card is hidden
+				if (item.hidden && !editMode) {
+					col.style.display = 'none';
+				} else {
+					col.style.display = '';
+				}
+
+				container.appendChild(col);
+				// attach handlers to both card and its parent column
+				attachDragHandlers(card);
+				addTiltEffect(card);
+				attachColumnDropZone(col);
+				card.addEventListener('click', () => {
+					if (editMode) return; // don't follow links while editing
+					window.location.href = card.dataset.url;
+				});
+			});
+		}
+
+		function attachDragHandlers(el) {
+			el.addEventListener('dragstart', dragStart);
+			el.addEventListener('dragenter', dragEnter);
+			el.addEventListener('dragover', dragOver);
+			el.addEventListener('dragleave', dragLeave);
+			el.addEventListener('drop', dragDrop);
+			el.addEventListener('dragend', dragEnd);
+		}
+
+		// apply a small 3D tilt based on mouse position and scale on hover
+		function addTiltEffect(card) {
+			card.addEventListener('mousemove', e => {
+				const rect = card.getBoundingClientRect();
+				const x = e.clientX - rect.left;
+				const y = e.clientY - rect.top;
+				const cx = rect.width / 2;
+				const cy = rect.height / 2;
+				const dx = (x - cx) / cx;
+				const dy = (y - cy) / cy;
+				const tiltX = dy * 7; // degrees of rotation
+				const tiltY = dx * -7;
+				card.style.transform = `perspective(500px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(1.02)`;
+			});
+			card.addEventListener('mouseleave', () => {
+				card.style.transform = '';
+			});
+		}
+
+		// columns themselves can act as generous drop targets without starting a drag
+		function attachColumnDropZone(col) {
+			col.addEventListener('dragenter', dragEnter);
+			col.addEventListener('dragover', dragOver);
+			col.addEventListener('dragleave', dragLeave);
+			col.addEventListener('drop', dragDrop);
+		}
+
+		let draggingEl = null;
+
+		function dragStart(e) {
+			draggingEl = this;
+			e.dataTransfer.effectAllowed = 'move';
+			e.dataTransfer.setData('text/plain', this.id);
+			this.classList.add('opacity-50', 'dragging');
+			// clear any stray highlights before drag begins
+			container.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
+		}
+
+		function dragOver(e) {
+			e.preventDefault();
+			e.dataTransfer.dropEffect = 'move';
+		}
+
+		function dragDrop(e) {
+			e.stopPropagation();
+			// cleanup any hover highlights on the target
+			this.classList.remove('drop-target');
+			const draggedId = e.dataTransfer.getData('text/plain');
+			const dragged = document.getElementById(draggedId);
+			if (dragged && dragged !== this) {
+				// figure out column context: if drop on a card, use its parent; if on a col, use it directly
+				const draggedCol = dragged.parentElement;
+				const targetCol = this.classList.contains('col-12') ? this : this.parentElement;
+
+				const swapNodes = (a, b) => {
+					const parent = a.parentNode;
+					const siblingA = a.nextSibling;
+					const siblingB = b.nextSibling;
+					parent.insertBefore(a, siblingB);
+					parent.insertBefore(b, siblingA);
+				};
+
+				if (targetCol && targetCol !== draggedCol) {
+					swapNodes(draggedCol, targetCol);
+					saveOrder();
+				}
+			}
+			return false;
+		}
+
+		function dragEnd(e) {
+			this.classList.remove('opacity-50', 'dragging');
+			// remove any lingering drop targets
+			container.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
+		}
+
+
+		// initialize on load
+		// export the current card order from localStorage as a JSON file
+		function exportOrder() {
+			const order = localStorage.getItem('cardOrder') || '[]';
+			try {
+				const blob = new Blob([order], { type: 'application/json' });
+				const url = URL.createObjectURL(blob);
+				const a = document.createElement('a');
+				a.href = url;
+				a.download = 'order.json';
+				document.body.appendChild(a);
+				a.click();
+				document.body.removeChild(a);
+				URL.revokeObjectURL(url);
+			} catch (e) {
+				console.error('export failed', e);
+			}
+		}
+
+		document.addEventListener('DOMContentLoaded', () => {
+			loadConfig().then(cfg => {
+				// apply branding from config
+				const branding = cfg.branding || {};
+				const siteName = branding.siteName || 'BrandName';
+				const navbarHref = branding.navbarHref || '#';
+				const footerText = branding.footerText || 'Your Company';
+				const footerLinkText = branding.footerLinkText || 'Learn more';
+				const footerLinkUrl = branding.footerLinkUrl || '#';
+
+				const navBrandEl = document.getElementById('navbar-brand');
+				if (navBrandEl) {
+					navBrandEl.textContent = siteName;
+					navBrandEl.href = navbarHref;
+				}
+
+				// update page title and header span as well (span update is handled earlier by fetchConfig but
+				// re-run here in case DOMContentLoaded triggered brand changes too)
+				const headerSpan = document.querySelector('.container h1 span');
+				if (headerSpan) headerSpan.textContent = `${siteName} Dashboard`;
+				document.title = `${siteName} Dashboard`;
+
+				const footerYearEl = document.getElementById('footer-year');
+				const footerCompanyEl = document.getElementById('footer-company');
+				const footerLinkEl = document.getElementById('footer-link');
+				if (footerYearEl) footerYearEl.textContent = new Date().getFullYear();
+				if (footerCompanyEl) footerCompanyEl.textContent = footerText;
+				if (footerLinkEl) {
+					footerLinkEl.textContent = footerLinkText;
+					footerLinkEl.href = footerLinkUrl;
+				}
+				// wire up theme toggle button
+				const themeBtn = document.getElementById('theme-toggle');
+				if (themeBtn) {
+					themeBtn.addEventListener('click', () => {
+						const currentlyDark = document.body.hasAttribute('data-theme');
+						applyTheme(!currentlyDark);
+						updateThemeToggleText();
+					});
+				}
+				// allow either new "departments" property or fall back to legacy "roles"
+				const deptsFromConfig = Array.isArray(cfg.departments) ? cfg.departments.slice()
+					: Array.isArray(cfg.roles) ? cfg.roles.slice() : [];
+				// persist departments if first load or config changed
+				const existing = loadDepartments();
+				if (deptsFromConfig.length && JSON.stringify(existing) !== JSON.stringify(deptsFromConfig)) {
+					saveDepartments(deptsFromConfig);
+				}
+
+				let currentDept = localStorage.getItem('userDepartment') || '';
+
+				// build initial card list from config or fallback
+				let list;
+				if (Array.isArray(cfg.cards)) {
+					list = cfg.cards.slice();
+				} else {
+					list = defaultCards.slice();
+				}
+
+				const deptSelect = document.getElementById('department-select');
+				if (deptSelect) {
+					const deptList = loadDepartments();
+					if (deptList.length === 0) {
+						deptSelect.style.display = 'none';
+					} else {
+						deptSelect.innerHTML = '';
+						const emptyOpt = document.createElement('option');
+						emptyOpt.value = '';
+						emptyOpt.textContent = 'Department...';
+						deptSelect.appendChild(emptyOpt);
+						deptList.forEach(d => {
+							const opt = document.createElement('option');
+							opt.value = d.name;
+							opt.textContent = d.name;
+							if (d.name === currentDept) opt.selected = true;
+							deptSelect.appendChild(opt);
+						});
+						deptSelect.addEventListener('change', e => {
+							currentDept = e.target.value;
+							if (currentDept) {
+								localStorage.setItem('userDepartment', currentDept);
+							} else {
+								localStorage.removeItem('userDepartment');
+							}
+							// recalc hidden flags and re-render
+							const hiddenSet = loadHidden();
+							list.forEach(i => { i.hidden = hiddenSet.has(i.id); });
+							applyDepartmentHidden(list);
+							list = list.filter(i => !i.hidden).concat(list.filter(i => i.hidden));
+							renderCards(list);
+						});
+					}
+				}
+
+				// apply saved order if present
+				const order = loadOrder();
+				if (order) {
+					const map = new Map(list.map(i => [i.id, i]));
+					const ordered = [];
+					order.forEach(id => {
+						if (map.has(id)) ordered.push(map.get(id));
+					});
+					list.forEach(i => { if (!order.includes(i.id)) ordered.push(i); });
+					list = ordered;
+				}
+				const hiddenSet = loadHidden();
+				list.forEach(i => { i.hidden = hiddenSet.has(i.id); });
+				applyDepartmentHidden(list);
+				// ensure hidden ones are after visible
+				list = list.filter(i => !i.hidden).concat(list.filter(i => i.hidden));
+
+				renderCards(list);
+
+				// wire up edit toggle button
+				const editBtn = document.getElementById('edit-toggle');
+				if (editBtn) {
+					editBtn.addEventListener('click', function (e) {
+						e.preventDefault();
+						toggleEditMode();
+					});
+					updateEditButton();
+				}
+
+				// hook up export link
+				const exp = document.getElementById('export-link');
+				if (exp) {
+					exp.addEventListener('click', function (e) {
+						e.preventDefault();
+						exportOrder();
+					});
+				}
+				// download full config file
+				const downloadCfgBtn = document.getElementById('download-config-btn');
+				if (downloadCfgBtn) {
+					downloadCfgBtn.addEventListener('click', function (e) {
+						e.preventDefault();
+						fetchConfig('config.json')
+							.catch(() => fetchConfig('config.json.example'))
+							.then(cfg => {
+								const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
+								const url = URL.createObjectURL(blob);
+								const a = document.createElement('a');
+								a.href = url;
+								a.download = 'config.json';
+								document.body.appendChild(a);
+								a.click();
+								document.body.removeChild(a);
+								URL.revokeObjectURL(url);
+							}).catch(console.error);
+					});
+				}
+
+				// upload support
+				const uploadBtn = document.getElementById('upload-btn');
+				const uploadInput = document.getElementById('upload-input');
+				if (uploadBtn && uploadInput) {
+					uploadBtn.addEventListener('click', function (e) {
+						e.preventDefault();
+						uploadInput.click();
+					});
+					uploadInput.addEventListener('change', function () {
+						const file = this.files && this.files[0];
+						if (!file) return;
+						const reader = new FileReader();
+						reader.onload = function (evt) {
+							try {
+								const text = evt.target.result;
+								const parsed = JSON.parse(text);
+								if (Array.isArray(parsed)) {
+									localStorage.setItem('cardOrder', JSON.stringify(parsed));
+									// hide markers don't make sense after a fresh import, clear them
+									localStorage.removeItem('cardHidden');
+									// reload to apply new order
+									window.location.reload();
+								} else {
+									alert('Invalid format; expected an array');
+								}
+							} catch (err) {
+								alert('Failed to parse JSON: ' + err.message);
+							}
+						};
+						reader.readAsText(file);
+					});
+				}
+
+				// reset support
+				const resetBtn = document.getElementById('reset-btn');
+				if (resetBtn) {
+					resetBtn.addEventListener('click', function (e) {
+						e.preventDefault();
+						if (confirm('Are you sure you want to reset order?')) {
+							localStorage.removeItem('cardOrder');
+							localStorage.removeItem('cardHidden');
+							window.location.reload();
+						}
+					});
+				}
+
+				// footer button visibility managed via JS hover handlers
+				const footer = document.querySelector('.custom-footer');
+				if (footer) {
+					const controls = footer.querySelectorAll('.export-link, #upload-btn, #reset-btn');
+					const hideControls = () => controls.forEach(el => el.style.display = 'none');
+					const showControls = () => controls.forEach(el => el.style.display = 'inline');
+					// start hidden
+					hideControls();
+					footer.addEventListener('mouseenter', showControls);
+					footer.addEventListener('mouseleave', hideControls);
+				}
+			});
+		});
+
+	</script>
 </body>
+
 </html>
