@@ -43,7 +43,7 @@ The card order is stored under the `cardOrder` key in `localStorage` as a JSON a
 
 ## 📄 License
 
-This project is provided under the [Creator's License](./LICENSE.md). **Please read the license file carefully before using or distributing the code. It is a custom, atypical license you haven't read. **
+This project is provided under the [Creator's License](./LICENSE.md). **Please read the license file carefully before using or distributing the code. It is a custom, atypical license you haven't read.**
 
 ---
 
